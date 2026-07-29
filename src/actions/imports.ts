@@ -1,0 +1,21 @@
+"use server";
+import ExcelJS from "exceljs";
+import { revalidatePath } from "next/cache";
+import { requireAdmin } from "@/lib/auth/permissions";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { studentCodeSchema } from "@/lib/validation/schemas";
+
+export async function importStudentsAction(formData: FormData) {
+  const user=await requireAdmin(); const file=formData.get("file");
+  if(!(file instanceof File)||file.size===0||file.size>8_000_000)return;
+  const workbook=new ExcelJS.Workbook(); await workbook.xlsx.load(await file.arrayBuffer());
+  const sheet=workbook.worksheets[0]; if(!sheet)return;
+  const admin=createAdminClient();
+  const [{data:grades},{data:year}]=await Promise.all([admin.from("grades").select("id,name").eq("active",true),admin.from("academic_years").select("id").eq("active",true).single()]);
+  if(!year)return;
+  const gradeMap=new Map((grades??[]).map(x=>[x.name.toLowerCase(),x.id])); const seen=new Set<string>(); const records:{code:string;full_name:string;grade_id:string;academic_year_id:string}[]=[];
+  sheet.eachRow((row,index)=>{if(index===1)return;const code=String(row.getCell(1).text).trim();const name=String(row.getCell(2).text).trim();const grade=String(row.getCell(3).text).trim().toLowerCase();const gradeId=gradeMap.get(grade);if(studentCodeSchema.safeParse(code).success&&name.length>=3&&gradeId&&!seen.has(code)){seen.add(code);records.push({code,full_name:name,grade_id:gradeId,academic_year_id:year.id});}});
+  if(records.length)await admin.from("students").upsert(records,{onConflict:"code"});
+  await admin.from("audit_logs").insert({user_id:user.id,action:"ADMIN_IMPORT_STUDENTS",entity:"students",metadata:{accepted:records.length,file_name:file.name}});
+  revalidatePath("/administracion/estudiantes");
+}

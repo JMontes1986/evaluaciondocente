@@ -1,0 +1,14 @@
+create index students_code_active_idx on public.students (code) where active;
+create index students_grade_idx on public.students (grade_id);
+create index students_year_idx on public.students (academic_year_id);
+create index assignments_grade_idx on public.teacher_assignments (grade_id) where active;
+create index assignments_teacher_idx on public.teacher_assignments (teacher_id) where active;
+create index assignments_year_grade_idx on public.teacher_assignments (academic_year_id, grade_id) where active;
+create index evaluations_teacher_period_idx on public.evaluations (teacher_id, evaluation_period_id);
+create index evaluations_student_idx on public.evaluations (student_id);
+create index evaluations_period_date_idx on public.evaluations (evaluation_period_id, submitted_at);
+create index answers_evaluation_idx on public.evaluation_answers (evaluation_id);
+create index answers_question_idx on public.evaluation_answers (question_id);
+create index sessions_hash_expiry_idx on public.student_sessions (token_hash, expires_at) where revoked_at is null;
+create index report_links_hash_idx on public.report_links (token_hash) where revoked_at is null;
+create index audit_logs_user_date_idx on public.audit_logs (user_id, created_at desc);
