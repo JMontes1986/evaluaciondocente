@@ -13,6 +13,12 @@ export const studentSchema = z.object({
   gradeId: z.uuid(),
   academicYearId: z.uuid()
 });
+export const teacherAssignmentSchema = z.object({
+  teacherId: z.uuid(),
+  subjectId: z.uuid(),
+  gradeId: z.uuid(),
+  academicYearId: z.uuid()
+});
 export const questionSchema = z.object({
   text: z.string().trim().min(10).max(500),
   category: z.string().trim().max(120).optional(),

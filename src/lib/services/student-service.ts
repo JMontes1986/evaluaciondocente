@@ -30,18 +30,29 @@ export async function getStudentEvaluationContext(studentId: string) {
   const completedIds = new Set((evaluations ?? []).map((item) => item.teacher_id));
   const teacherMap = new Map((teachers ?? []).map((item) => [item.id, item]));
   const subjectMap = new Map((subjects ?? []).map((item) => [item.id, item.name]));
-  const unique = new Map<string, PendingTeacher>();
+  const unique = new Map<string, PendingTeacher & { subjectNames: string[] }>();
   for (const assignment of assignments ?? []) {
     const teacher = teacherMap.get(assignment.teacher_id);
-    if (teacher && !unique.has(teacher.id)) unique.set(teacher.id, {
-      assignmentId: assignment.id,
-      teacherId: teacher.id,
-      teacherName: teacher.full_name,
-      photoUrl: teacher.photo_url,
-      subjectName: subjectMap.get(assignment.subject_id) ?? "Asignatura"
-    });
+    if (!teacher) continue;
+    const subjectName = subjectMap.get(assignment.subject_id) ?? "Asignatura";
+    const existing = unique.get(teacher.id);
+    if (existing) {
+      if (!existing.subjectNames.includes(subjectName)) existing.subjectNames.push(subjectName);
+    } else {
+      unique.set(teacher.id, {
+        assignmentId: assignment.id,
+        teacherId: teacher.id,
+        teacherName: teacher.full_name,
+        photoUrl: teacher.photo_url,
+        subjectName,
+        subjectNames: [subjectName]
+      });
+    }
   }
-  const all = [...unique.values()];
+  const all: PendingTeacher[] = [...unique.values()].map(({ subjectNames, ...teacher }) => ({
+    ...teacher,
+    subjectName: subjectNames.join(", ")
+  }));
   return {
     student, gradeName: grade?.name ?? "", period,
     pending: all.filter((item) => !completedIds.has(item.teacherId)),
