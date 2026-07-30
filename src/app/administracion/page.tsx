@@ -144,6 +144,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
 
       <AiDecisionAnalysis
         configured={Boolean(process.env.GROQ_API_KEY)}
+        canAnalyze={data.metrics.evaluations >= data.minResponses && data.questionAverages.length > 0}
         periodId={data.period?.id}
         teacherId={teacherId}
         gradeId={gradeId}

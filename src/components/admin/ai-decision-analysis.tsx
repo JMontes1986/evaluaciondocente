@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, RefreshCw, Sparkles, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface AiDecisionAnalysisProps {
   configured: boolean;
+  canAnalyze: boolean;
   periodId?: string;
   teacherId?: string;
   gradeId?: string;
@@ -13,6 +14,7 @@ interface AiDecisionAnalysisProps {
 
 export function AiDecisionAnalysis({
   configured,
+  canAnalyze,
   periodId,
   teacherId,
   gradeId
@@ -21,8 +23,12 @@ export function AiDecisionAnalysis({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
-  async function generateAnalysis() {
+  const generateAnalysis = useCallback(async () => {
+    controllerRef.current?.abort();
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
     setAnalysis("");
     setError("");
     setLoading(true);
@@ -62,7 +68,7 @@ export function AiDecisionAnalysis({
               choices?: { delta?: { content?: string | null } }[];
             };
             const text = chunk.choices?.[0]?.delta?.content;
-            if (text) {
+            if (text && requestIdRef.current === requestId) {
               receivedContent = true;
               setAnalysis((current) => current + text);
             }
@@ -71,16 +77,30 @@ export function AiDecisionAnalysis({
       }
       if (!receivedContent) throw new Error("Groq terminó la solicitud sin devolver un análisis.");
     } catch (caught) {
-      if (caught instanceof DOMException && caught.name === "AbortError") {
-        setError("La generación fue cancelada.");
-      } else {
-        setError(caught instanceof Error ? caught.message : "No fue posible generar el análisis.");
+      if (requestIdRef.current === requestId) {
+        if (caught instanceof DOMException && caught.name === "AbortError") {
+          setError("La generación fue cancelada.");
+        } else {
+          setError(caught instanceof Error ? caught.message : "No fue posible generar el análisis.");
+        }
       }
     } finally {
-      controllerRef.current = null;
-      setLoading(false);
+      if (requestIdRef.current === requestId) {
+        controllerRef.current = null;
+        setLoading(false);
+      }
     }
-  }
+  }, [gradeId, periodId, teacherId]);
+
+  useEffect(() => {
+    if (!configured || !canAnalyze) return;
+    const timer = window.setTimeout(() => void generateAnalysis(), 150);
+    return () => window.clearTimeout(timer);
+  }, [canAnalyze, configured, generateAnalysis]);
+
+  useEffect(() => {
+    return () => controllerRef.current?.abort();
+  }, []);
 
   return (
     <section className="mt-6 overflow-hidden rounded-xl border border-primary/20 bg-card">
@@ -88,6 +108,11 @@ export function AiDecisionAnalysis({
         <div>
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             <Bot className="size-5 text-primary" />Análisis asistido con Groq
+            {configured && canAnalyze && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                <span className="size-1.5 animate-pulse rounded-full bg-emerald-600" />En vivo
+              </span>
+            )}
           </h2>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
             Qwen 3.6 27B interpreta exclusivamente los indicadores agregados visibles en este dashboard.
@@ -98,7 +123,7 @@ export function AiDecisionAnalysis({
             <Square className="size-4" />Detener
           </Button>
         ) : (
-          <Button type="button" onClick={generateAnalysis} disabled={!configured}>
+          <Button type="button" onClick={generateAnalysis} disabled={!configured || !canAnalyze}>
             {analysis ? <RefreshCw className="size-4" /> : <Sparkles className="size-4" />}
             {analysis ? "Generar nuevamente" : "Generar análisis"}
           </Button>
@@ -108,6 +133,11 @@ export function AiDecisionAnalysis({
       {!configured && (
         <p className="m-5 rounded-lg border border-amber-300/60 bg-amber-50 p-4 text-sm text-amber-950 sm:m-6">
           Configura GROQ_API_KEY en las variables de entorno de Vercel para habilitar esta función.
+        </p>
+      )}
+      {configured && !canAnalyze && (
+        <p className="m-5 rounded-lg border border-amber-300/60 bg-amber-50 p-4 text-sm text-amber-950 sm:m-6">
+          El análisis en vivo se activará cuando existan suficientes evaluaciones para respetar el umbral de privacidad.
         </p>
       )}
       {loading && !analysis && (
