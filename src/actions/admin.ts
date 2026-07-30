@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth/permissions";
-import { questionSchema, studentSchema, teacherAssignmentSchema, teacherSchema } from "@/lib/validation/schemas";
+import { questionSchema, studentSchema, subjectSchema, teacherAssignmentSchema, teacherSchema, updateSubjectSchema } from "@/lib/validation/schemas";
 
 async function audit(userId: string, action: string, entity: string, entityId?: string) {
   await createAdminClient().from("audit_logs").insert({ user_id: userId, action, entity, entity_id: entityId ?? null });
@@ -60,6 +61,42 @@ export async function createTeacherAssignmentAction(formData: FormData) {
   await audit(adminUser.id, "ADMIN_UPSERT_TEACHER_ASSIGNMENT", "teacher_assignments", data?.id);
   revalidatePath("/administracion/asignaciones");
   revalidatePath("/evaluacion");
+}
+
+export async function createSubjectAction(formData: FormData) {
+  const adminUser = await requireAdmin();
+  const parsed = subjectSchema.safeParse({ name: formData.get("name") });
+  if (!parsed.success) return;
+
+  const { data, error } = await createAdminClient()
+    .from("subjects")
+    .insert({ name: parsed.data.name })
+    .select("id")
+    .single();
+  if (error) return;
+
+  await audit(adminUser.id, "ADMIN_CREATE_SUBJECT", "subjects", data.id);
+  revalidatePath("/administracion/asignaturas");
+}
+
+export async function updateSubjectAction(formData: FormData) {
+  const adminUser = await requireAdmin();
+  const parsed = updateSubjectSchema.safeParse({
+    id: formData.get("id"),
+    name: formData.get("name")
+  });
+  if (!parsed.success) return;
+
+  const { error } = await createAdminClient()
+    .from("subjects")
+    .update({ name: parsed.data.name })
+    .eq("id", parsed.data.id);
+  if (error) return;
+
+  await audit(adminUser.id, "ADMIN_UPDATE_SUBJECT", "subjects", parsed.data.id);
+  revalidatePath("/administracion/asignaturas");
+  revalidatePath("/administracion/asignaciones");
+  redirect("/administracion/asignaturas");
 }
 
 export async function createQuestionAction(formData: FormData) {
