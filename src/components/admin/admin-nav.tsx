@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, CalendarRange, ChartNoAxesCombined, ClipboardCheck, FileSpreadsheet, FileText, GraduationCap, LayoutDashboard, ListChecks, Settings, UserCog, UsersRound } from "lucide-react";
+import { BarChart3, BookOpen, CalendarRange, ChartNoAxesCombined, ClipboardCheck, ClipboardList, FileSpreadsheet, FileText, GraduationCap, LayoutDashboard, ListChecks, Settings, UserCog, UsersRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   ["/administracion", "Dashboard", LayoutDashboard],
   ["/administracion/evaluaciones", "Evaluaciones", ClipboardCheck],
+  ["/administracion/seguimiento-estudiantes", "Seguimiento", ClipboardList],
   ["/administracion/docentes", "Docentes", UsersRound],
   ["/administracion/estudiantes", "Estudiantes", GraduationCap],
   ["/administracion/grados", "Grados", BarChart3],
