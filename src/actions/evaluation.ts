@@ -16,10 +16,17 @@ export async function submitEvaluationAction(_state: EvaluationState, formData: 
     teacherId: formData.get("teacherId"),
     assignmentId: formData.get("assignmentId"),
     periodId: formData.get("periodId"),
-    feedback: formData.get("feedback"),
+    feedback: formData.get("feedback") ?? "",
     answers
   });
-  if (!parsed.success) return { error: "Responde todas las preguntas antes de enviar." };
+  if (!parsed.success) {
+    const answersIssue = parsed.error.issues.some((issue) => issue.path[0] === "answers");
+    return {
+      error: answersIssue
+        ? "Responde todas las preguntas antes de enviar."
+        : "No fue posible validar los datos de la evaluación. Actualiza la página e intenta nuevamente."
+    };
+  }
   const admin = createAdminClient();
   const { error } = await admin.rpc("submit_teacher_evaluation", {
     p_student_id: session.student_id,
