@@ -2,9 +2,9 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getSystemSettings } from "@/lib/services/system-settings-service";
 
 const COOKIE_NAME = "colgemelli_student_session";
-const TWO_HOURS = 2 * 60 * 60 * 1000;
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -12,7 +12,8 @@ function hashToken(token: string) {
 
 export async function createStudentSession(studentId: string) {
   const token = randomBytes(32).toString("base64url");
-  const expiresAt = new Date(Date.now() + TWO_HOURS);
+  const settings = await getSystemSettings();
+  const expiresAt = new Date(Date.now() + settings.studentSessionMinutes * 60 * 1000);
   const admin = createAdminClient();
   const { error } = await admin.from("student_sessions").insert({
     student_id: studentId,

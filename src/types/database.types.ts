@@ -17,6 +17,7 @@ export interface Database {
       student_sessions: { Row: { id: string; student_id: string; token_hash: string; expires_at: string; created_at: string; revoked_at: string | null }; Insert: { id?: string; student_id: string; token_hash: string; expires_at: string; revoked_at?: string | null }; Update: { revoked_at?: string | null }; Relationships: [] };
       report_links: { Row: { id: string; teacher_id: string; evaluation_period_id: string; token_hash: string; expires_at: string | null; revoked_at: string | null; created_by: string | null; created_at: string }; Insert: { teacher_id: string; evaluation_period_id: string; token_hash: string; expires_at?: string | null; created_by?: string | null }; Update: { revoked_at?: string | null }; Relationships: [] };
       audit_logs: { Row: { id: string; user_id: string | null; action: string; entity: string; entity_id: string | null; metadata: Record<string, unknown>; created_at: string }; Insert: { user_id?: string | null; action: string; entity: string; entity_id?: string | null; metadata?: Record<string, unknown> }; Update: never; Relationships: [] };
+      system_settings: { Row: { id: number; min_responses: number; student_session_minutes: number; updated_by: string | null; updated_at: string }; Insert: { id?: number; min_responses?: number; student_session_minutes?: number; updated_by?: string | null }; Update: { min_responses?: number; student_session_minutes?: number; updated_by?: string | null }; Relationships: [] };
     };
     Views: Record<string, never>;
     Functions: {

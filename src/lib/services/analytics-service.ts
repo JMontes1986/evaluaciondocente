@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getSystemSettings } from "@/lib/services/system-settings-service";
 
 export interface DashboardFilters {
   periodId?: string;
@@ -102,11 +103,12 @@ function average(sum: number, count: number) {
 export async function getDashboardData(filters: DashboardFilters = {}) {
   const admin = createAdminClient();
   const now = new Date().toISOString();
-  const [{ data: periods }, { data: teachers }, { data: grades }, { data: questions }] = await Promise.all([
+  const [{ data: periods }, { data: teachers }, { data: grades }, { data: questions }, systemSettings] = await Promise.all([
     admin.from("evaluation_periods").select("id,name,active,start_date,end_date").order("start_date", { ascending: false }),
     admin.from("teachers").select("id,full_name,active").order("full_name"),
     admin.from("grades").select("id,name,active").order("order_number"),
-    admin.from("evaluation_questions").select("id,text,order_number").order("order_number")
+    admin.from("evaluation_questions").select("id,text,order_number").order("order_number"),
+    getSystemSettings()
   ]);
 
   const requestedPeriod = (periods ?? []).find((period) => period.id === filters.periodId);
@@ -114,10 +116,7 @@ export async function getDashboardData(filters: DashboardFilters = {}) {
     (period) => period.active && period.start_date <= now && period.end_date >= now
   );
   const period = requestedPeriod ?? currentPeriod ?? periods?.[0] ?? null;
-  const configuredMinResponses = Number(process.env.MIN_RESPONSES_FOR_REPORT ?? 5);
-  const minResponses = Number.isFinite(configuredMinResponses)
-    ? Math.max(1, configuredMinResponses)
-    : 5;
+  const minResponses = systemSettings.minResponses;
 
   if (!period) {
     return {
