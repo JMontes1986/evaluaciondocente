@@ -52,7 +52,14 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
         <span className="grid size-8 shrink-0 place-items-center rounded-full bg-secondary font-mono text-xs font-bold text-primary">{index + 1}</span>
         <div><p className="text-xs font-semibold uppercase tracking-[.13em] text-muted-foreground">{question.category ?? "Criterio"}</p><p className="mt-1 font-semibold leading-relaxed">{question.text}</p></div>
       </div>
-      <RadioGroup.Root className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" value={answers[question.id]?.toString()} onValueChange={(value) => setAnswers((current) => ({ ...current, [question.id]: Number(value) }))}>
+      <RadioGroup.Root
+        required
+        name={`question-${question.id}`}
+        aria-label={`Respuesta obligatoria para la pregunta ${index + 1}`}
+        className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"
+        value={answers[question.id]?.toString()}
+        onValueChange={(value) => setAnswers((current) => ({ ...current, [question.id]: Number(value) }))}
+      >
         {options.map((option) => <label key={option.score} className={cn("flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm font-medium transition-colors", answers[question.id] === option.score ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-secondary")}>
           <RadioGroup.Item value={option.score.toString()} className="grid size-5 place-items-center rounded-full border border-current">
             <RadioGroup.Indicator className="size-2.5 rounded-full bg-current" />
