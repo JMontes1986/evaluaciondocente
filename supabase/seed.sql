@@ -9,18 +9,28 @@ insert into public.subjects (name) values
 ('Matemáticas'),('Español'),('Inglés'),('Tecnología'),('Religión'),('Ciencias Naturales')
 on conflict (name) do nothing;
 
--- No había repositorio fuente ni banco de preguntas recuperable.
--- Estas preguntas institucionales iniciales pueden editarse y desactivarse desde administración.
+-- Cuestionario oficial de Evaluación Docente del Colegio Gemelli.
 insert into public.evaluation_questions (text, category, order_number) values
-('Explica con claridad los temas y resuelve las dudas del grupo.', 'Metodología', 1),
-('Utiliza estrategias y recursos que facilitan el aprendizaje.', 'Metodología', 2),
-('Demuestra dominio y preparación de los contenidos de la asignatura.', 'Dominio de la asignatura', 3),
-('Relaciona los contenidos con situaciones y ejemplos comprensibles.', 'Dominio de la asignatura', 4),
-('Trata a los estudiantes con respeto y escucha sus inquietudes.', 'Relación pedagógica', 5),
-('Promueve la participación y un ambiente seguro para aprender.', 'Relación pedagógica', 6),
-('Comunica oportunamente los criterios y resultados de evaluación.', 'Evaluación', 7),
-('Evalúa de manera coherente con los contenidos trabajados en clase.', 'Evaluación', 8),
-('Da orientaciones útiles para mejorar el desempeño académico.', 'Comunicación', 9),
-('Favorece el diálogo y la sana convivencia en el aula.', 'Convivencia', 10),
-('Cumple los horarios y compromisos establecidos para la clase.', 'Responsabilidad', 11),
-('Acompaña con interés el proceso de aprendizaje de los estudiantes.', 'Responsabilidad', 12);
+('Demuestra dominio en los temas explicados en clase', null, 1),
+('Presenta los temas con claridad', null, 2),
+('Comunica el propósito de cada clase.', null, 3),
+('Responde las preguntas planteadas por los estudiantes.', null, 4),
+('Es puntual para iniciar y finalizar las clases.', null, 5),
+('Explica los criterios de evaluación de la materia.', null, 6),
+('Representa figura de autoridad y controla la disciplina del grupo.', null, 7),
+('Revisa con frecuencia módulos y cuadernos', null, 8),
+('Da a conocer oportunamente los resultados de las evaluaciones.', null, 9),
+('Indica normas de comportamiento en clase claras para todos', null, 10),
+('El docente es respetado por los estudiantes del curso', null, 11),
+('Realiza clases lúdicas y dinámicas', null, 12),
+('Utiliza las herramientas tecnológicas del aula para dinamizar los procesos de enseñanza aprendizaje.', null, 13),
+('Actualiza el sistema académico de manera periódica, ingresando notas, tareas y evaluaciones.', null, 14),
+('Demuestra planeación y organización en el desarrollo del contenido de la asignatura', null, 15),
+('Demuestra en su cotidianidad liderazgo positivo con estudiantes', null, 16),
+('Escucha y atiende oportunamente las inquietudes e ideas de los estudiantes', null, 17),
+('Refuerza las actitudes positivas de los estudiantes', null, 18),
+('Establece y hace seguimiento a las estrategias que favorecen la sana convivencia escolar.', null, 19),
+('Promueve en sus estudiantes valores y actitud franciscana y lo demuestra con su ejemplo.', null, 20),
+('Relaciona los contenidos de su área con los contenidos de otras asignaturas', null, 21),
+('El docente realiza la socialización y retroalimentación de las pruebas de seguimiento y/o simulacros.', null, 22),
+('El docente realiza evaluaciones claras, que se relacionan directamente con los aprendizajes orientados durante las clases.', null, 23);
