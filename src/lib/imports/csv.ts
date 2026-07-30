@@ -3,6 +3,15 @@ export interface CsvTable {
   rows: string[][];
 }
 
+export function decodeCsvBytes(bytes: ArrayBuffer) {
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    // Excel en Windows suele guardar los CSV como ANSI (Windows-1252).
+    return new TextDecoder("windows-1252").decode(bytes);
+  }
+}
+
 export function normalizeCsvValue(value: string) {
   return value
     .trim()

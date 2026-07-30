@@ -1,6 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { findCsvColumn, normalizeCsvValue, parseCsv } from "../src/lib/imports/csv";
+import { decodeCsvBytes, findCsvColumn, normalizeCsvValue, parseCsv } from "../src/lib/imports/csv";
+
+test("decodifica archivos UTF-8 y Windows-1252", () => {
+  const utf8 = new TextEncoder().encode("código,nombre\n1,María");
+  assert.equal(decodeCsvBytes(utf8.buffer), "código,nombre\n1,María");
+
+  const windows1252 = Uint8Array.from([
+    99, 243, 100, 105, 103, 111, 44, 110, 111, 109, 98, 114, 101, 10,
+    49, 44, 77, 97, 114, 237, 97
+  ]);
+  assert.equal(decodeCsvBytes(windows1252.buffer), "código,nombre\n1,María");
+});
 
 test("interpreta CSV separado por punto y coma y elimina el BOM", () => {
   const table = parseCsv("\uFEFFcodigo;nombre;grado;ano\r\nA-18;María del Pilar Ríos;6A;2026");

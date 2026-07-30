@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/permissions";
-import { findCsvColumn, normalizeCsvValue, parseCsv } from "@/lib/imports/csv";
+import { decodeCsvBytes, findCsvColumn, normalizeCsvValue, parseCsv } from "@/lib/imports/csv";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { studentCodeSchema, teacherSchema } from "@/lib/validation/schemas";
 
@@ -35,7 +35,7 @@ async function readCsvFile(formData: FormData) {
     throw new Error("El archivo debe tener extensión .csv.");
   }
 
-  const text = new TextDecoder("utf-8", { fatal: true }).decode(await file.arrayBuffer());
+  const text = decodeCsvBytes(await file.arrayBuffer());
   const table = parseCsv(text);
   if (table.rows.length === 0) throw new Error("El archivo solo contiene encabezados.");
   if (table.rows.length > MAX_ROWS) {
