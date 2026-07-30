@@ -1,7 +1,23 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpen, CalendarRange, ChartNoAxesCombined, ClipboardCheck, ClipboardList, FileSpreadsheet, FileText, GraduationCap, LayoutDashboard, ListChecks, Settings, UserCog, UsersRound } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  CalendarRange,
+  ChartNoAxesCombined,
+  ClipboardCheck,
+  ClipboardList,
+  FileSpreadsheet,
+  FileText,
+  GraduationCap,
+  LayoutDashboard,
+  ListChecks,
+  Settings,
+  UserCog,
+  UsersRound
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -21,10 +37,32 @@ const items = [
   ["/administracion/configuracion", "Configuración", Settings]
 ] as const;
 
-export function AdminNav() {
+export function AdminNav({ collapsed = false }: { collapsed?: boolean }) {
   const pathname = usePathname();
-  return <nav aria-label="Navegación administrativa" className="space-y-1">{items.map(([href,label,Icon]) => {
-    const active = href === "/administracion" ? pathname === href : pathname.startsWith(href);
-    return <Link key={href} href={href} className={cn("flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors", active ? "bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.08)]" : "text-white/62 hover:bg-white/[.07] hover:text-white")}><Icon className="size-4" strokeWidth={1.8} />{label}</Link>;
-  })}</nav>;
+
+  return (
+    <nav aria-label="Navegación administrativa" className="space-y-1">
+      {items.map(([href, label, Icon]) => {
+        const active = href === "/administracion" ? pathname === href : pathname.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            title={collapsed ? label : undefined}
+            aria-label={collapsed ? label : undefined}
+            className={cn(
+              "flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors",
+              collapsed && "lg:justify-center lg:px-0",
+              active
+                ? "bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.08)]"
+                : "text-white/62 hover:bg-white/[.07] hover:text-white"
+            )}
+          >
+            <Icon className="size-4 shrink-0" strokeWidth={1.8} />
+            <span className={collapsed ? "lg:sr-only" : ""}>{label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
