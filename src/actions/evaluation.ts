@@ -1,7 +1,9 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { commentModerationRateLimiter } from "@/lib/security/rate-limit";
 import { getStudentSession } from "@/lib/security/student-session";
+import { moderateEvaluationComment } from "@/lib/services/comment-moderation-service";
 import { evaluationSchema } from "@/lib/validation/schemas";
 
 export interface EvaluationState { error?: string; success?: boolean }
@@ -26,6 +28,18 @@ export async function submitEvaluationAction(_state: EvaluationState, formData: 
         ? "Responde todas las preguntas antes de enviar."
         : "No fue posible validar los datos de la evaluación. Actualiza la página e intenta nuevamente."
     };
+  }
+  if (parsed.data.feedback) {
+    const rateLimit = await commentModerationRateLimiter.check(`submit:${session.student_id}`);
+    if (!rateLimit.allowed) {
+      return { error: `Espera ${rateLimit.retryAfterSeconds} segundos antes de intentar nuevamente.` };
+    }
+    const moderation = await moderateEvaluationComment(parsed.data.feedback);
+    if (!moderation.allowed) {
+      return {
+        error: moderation.warning ?? "El comentario contiene lenguaje inapropiado. Modifícalo para continuar."
+      };
+    }
   }
   const admin = createAdminClient();
   const { error } = await admin.rpc("submit_teacher_evaluation", {

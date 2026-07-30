@@ -2,7 +2,7 @@
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as RadioGroup from "@radix-ui/react-radio-group";
-import { AlertCircle, CheckCircle2, Send } from "lucide-react";
+import { AlertCircle, CheckCircle2, LoaderCircle, Send, ShieldCheck } from "lucide-react";
 import { submitEvaluationAction } from "@/actions/evaluation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface Question { id: string; text: string; category: string | null; order_number: number }
+type ModerationStatus = "idle" | "checking" | "allowed" | "blocked";
+
 const options = [
   { score: 4, label: "Siempre" }, { score: 3, label: "Casi Siempre" },
   { score: 2, label: "Algunas Veces" }, { score: 1, label: "Nunca" }
@@ -19,6 +21,9 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
   const router = useRouter();
   const [state, action, pending] = useActionState(submitEvaluationAction, {});
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [feedback, setFeedback] = useState("");
+  const [moderationStatus, setModerationStatus] = useState<ModerationStatus>("idle");
+  const [moderationMessage, setModerationMessage] = useState("");
   const answered = Object.keys(answers).length;
   const progress = questions.length ? (answered / questions.length) * 100 : 0;
   const payload = useMemo(() => questions.filter((q) => answers[q.id]).map((q) => ({ questionId: q.id, score: answers[q.id] })), [answers, questions]);
@@ -28,6 +33,48 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
     const timer = window.setTimeout(() => router.push("/evaluacion?success=1"), 1300);
     return () => window.clearTimeout(timer);
   }, [state.success, router]);
+
+  useEffect(() => {
+    const comment = feedback.trim();
+    if (!comment) return;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch("/api/ai/moderate-comment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ comment }),
+          signal: controller.signal
+        });
+        const result = await response.json() as {
+          allowed?: boolean;
+          warning?: string | null;
+          error?: string;
+        };
+        if (!response.ok || typeof result.allowed !== "boolean") {
+          setModerationStatus("blocked");
+          setModerationMessage(result.error ?? "No fue posible revisar el comentario. Elimínalo o intenta nuevamente.");
+          return;
+        }
+        setModerationStatus(result.allowed ? "allowed" : "blocked");
+        setModerationMessage(
+          result.allowed
+            ? "Comentario revisado: puedes enviar la evaluación."
+            : result.warning ?? "El comentario contiene lenguaje inapropiado. Modifícalo para continuar."
+        );
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setModerationStatus("blocked");
+        setModerationMessage("No fue posible revisar el comentario. Elimínalo o intenta nuevamente.");
+      }
+    }, 650);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [feedback]);
 
   if (state.success) return <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-8 text-center text-emerald-900">
     <CheckCircle2 className="mx-auto size-10" /><h2 className="mt-4 text-xl font-semibold">¡Gracias por tu participación!</h2><p className="mt-2 text-sm">Tu evaluación fue guardada correctamente.</p>
@@ -71,10 +118,48 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
     {allowFeedback && <div className="space-y-2 rounded-xl border bg-card p-5 sm:p-6">
       <label htmlFor="feedback" className="font-semibold">Comentarios adicionales <span className="font-normal text-muted-foreground">(opcional)</span></label>
       <p className="text-sm text-muted-foreground">No incluyas nombres ni información personal.</p>
-      <Textarea id="feedback" name="feedback" maxLength={2000} placeholder="¿Deseas compartir alguna observación que ayude a mejorar la experiencia de aprendizaje?" />
+      <Textarea
+        id="feedback"
+        name="feedback"
+        maxLength={2000}
+        value={feedback}
+        aria-describedby="feedback-moderation"
+        aria-invalid={moderationStatus === "blocked"}
+        onChange={(event) => {
+          const value = event.target.value;
+          setFeedback(value);
+          setModerationStatus(value.trim() ? "checking" : "idle");
+          setModerationMessage(value.trim() ? "Revisando que el comentario sea apropiado…" : "");
+        }}
+        placeholder="¿Deseas compartir alguna observación que ayude a mejorar la experiencia de aprendizaje?"
+      />
+      <div
+        id="feedback-moderation"
+        role={moderationStatus === "blocked" ? "alert" : "status"}
+        aria-live="polite"
+        className={cn(
+          "flex min-h-5 items-center gap-2 text-sm",
+          moderationStatus === "blocked" && "text-destructive",
+          moderationStatus === "allowed" && "text-emerald-700",
+          (moderationStatus === "idle" || moderationStatus === "checking") && "text-muted-foreground"
+        )}
+      >
+        {moderationStatus === "checking" && <LoaderCircle className="size-4 animate-spin" />}
+        {moderationStatus === "allowed" && <ShieldCheck className="size-4" />}
+        {moderationStatus === "blocked" && <AlertCircle className="size-4" />}
+        {moderationStatus === "idle"
+          ? "El comentario opcional será revisado automáticamente antes de enviarlo."
+          : moderationMessage}
+      </div>
+      <p className="text-right text-xs text-muted-foreground">{feedback.length}/2000</p>
     </div>}
     {state.error && <p role="alert" className="flex gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive"><AlertCircle className="mt-0.5 size-4 shrink-0" />{state.error}</p>}
-    <Button type="submit" size="lg" disabled={answered !== questions.length || pending} className="w-full sm:w-auto">
+    <Button
+      type="submit"
+      size="lg"
+      disabled={answered !== questions.length || pending || moderationStatus === "checking" || moderationStatus === "blocked"}
+      className="w-full sm:w-auto"
+    >
       <Send className="size-4" /> {pending ? "Enviando…" : "Enviar evaluación"}
     </Button>
   </form>;
