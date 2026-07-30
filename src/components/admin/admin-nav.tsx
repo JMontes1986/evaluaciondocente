@@ -13,7 +13,7 @@ const items = [
   ["/administracion/asignaturas", "Asignaturas", BookOpen],
   ["/administracion/asignaciones", "Asignaciones", ListChecks],
   ["/administracion/preguntas", "Preguntas", ChartNoAxesCombined],
-  ["/administracion/periodos", "Periodos", CalendarRange],
+  ["/administracion/periodos", "Semestres", CalendarRange],
   ["/administracion/informes", "Informes", FileText],
   ["/administracion/importaciones", "Importaciones", FileSpreadsheet],
   ["/administracion/usuarios", "Usuarios", UserCog],

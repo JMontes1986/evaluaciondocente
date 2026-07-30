@@ -20,7 +20,7 @@ export async function studentLoginAction(_state: FormState, formData: FormData):
   if (!student) return { error: "No fue posible validar el código ingresado." };
   const now = new Date().toISOString();
   const { data: period } = await admin.from("evaluation_periods").select("id").eq("academic_year_id", student.academic_year_id).eq("active", true).lte("start_date", now).gte("end_date", now).limit(1).maybeSingle();
-  if (!period) return { error: "Actualmente no existe un periodo de evaluación activo." };
+  if (!period) return { error: "Actualmente no existe una evaluación docente semestral habilitada." };
   await createStudentSession(student.id);
   redirect("/evaluacion");
 }

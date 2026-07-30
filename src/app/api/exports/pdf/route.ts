@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPeriodSummary } from "@/lib/services/report-service";
 
 export async function GET(request:NextRequest){
-  const user=await requireAdmin(),periodId=request.nextUrl.searchParams.get("period");if(!periodId)return new Response("Periodo requerido",{status:400});
+  const user=await requireAdmin(),periodId=request.nextUrl.searchParams.get("period");if(!periodId)return new Response("Evaluación semestral requerida",{status:400});
   const summary=await getPeriodSummary(periodId),pdf=await PDFDocument.create(),font=await pdf.embedFont(StandardFonts.Helvetica),bold=await pdf.embedFont(StandardFonts.HelveticaBold);
   let page=pdf.addPage([595,842]),y=790;const draw=(text:string,size=10,strong=false)=>{page.drawText(text.replace(/[^\x20-\x7E]/g,""),{x:52,y,size,font:strong?bold:font,color:rgb(.07,.16,.28)});y-=size+9;};
   draw("COLEGIO FRANCISCANO AGUSTIN GEMELLI",11,true);draw("EVALUACION DOCENTE",22,true);draw(summary.period,12);y-=12;draw(`Evaluaciones registradas: ${summary.evaluationCount}`,11,true);y-=8;

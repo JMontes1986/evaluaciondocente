@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth/permissions";
-import { questionSchema, studentSchema, subjectSchema, teacherAssignmentSchema, teacherSchema, updateSubjectSchema } from "@/lib/validation/schemas";
+import { questionSchema, semesterEvaluationSchema, studentSchema, subjectSchema, teacherAssignmentSchema, teacherSchema, updateSubjectSchema } from "@/lib/validation/schemas";
 
 async function audit(userId: string, action: string, entity: string, entityId?: string) {
   await createAdminClient().from("audit_logs").insert({ user_id: userId, action, entity, entity_id: entityId ?? null });
@@ -97,6 +97,46 @@ export async function updateSubjectAction(formData: FormData) {
   revalidatePath("/administracion/asignaturas");
   revalidatePath("/administracion/asignaciones");
   redirect("/administracion/asignaturas");
+}
+
+export async function saveSemesterEvaluationAction(formData: FormData) {
+  const adminUser = await requireAdmin();
+  const parsed = semesterEvaluationSchema.safeParse({
+    semester: formData.get("semester"),
+    academicYearId: formData.get("academicYearId"),
+    startDate: formData.get("startDate"),
+    endDate: formData.get("endDate"),
+    active: formData.get("active") === "on",
+    allowFeedback: formData.get("allowFeedback") === "on"
+  });
+  if (!parsed.success) return;
+
+  const name = parsed.data.semester === "primer"
+    ? "Evaluación docente primer semestre"
+    : "Evaluación docente segundo semestre";
+  const admin = createAdminClient();
+  const { data: existing } = await admin
+    .from("evaluation_periods")
+    .select("id")
+    .eq("name", name)
+    .eq("academic_year_id", parsed.data.academicYearId)
+    .maybeSingle();
+  const values = {
+    name,
+    academic_year_id: parsed.data.academicYearId,
+    start_date: `${parsed.data.startDate}T00:00:00-05:00`,
+    end_date: `${parsed.data.endDate}T23:59:59-05:00`,
+    active: parsed.data.active,
+    allow_feedback: parsed.data.allowFeedback
+  };
+  const result = existing
+    ? await admin.from("evaluation_periods").update(values).eq("id", existing.id).select("id").single()
+    : await admin.from("evaluation_periods").insert(values).select("id").single();
+  if (result.error) return;
+
+  await audit(adminUser.id, "ADMIN_SAVE_SEMESTER_EVALUATION", "evaluation_periods", result.data.id);
+  revalidatePath("/administracion/periodos");
+  revalidatePath("/administracion", "layout");
 }
 
 export async function createQuestionAction(formData: FormData) {

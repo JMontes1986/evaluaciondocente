@@ -28,7 +28,7 @@ export default async function EvaluationsPage() {
         <div><p className="text-sm font-semibold text-primary">Hola, {firstName(context.student.full_name)}</p><h1 className="mt-2 text-3xl font-semibold tracking-[-.035em] sm:text-4xl">Tus evaluaciones docentes</h1><div className="mt-4 flex flex-wrap gap-2"><Badge><GraduationCap className="mr-1.5 size-3.5" />Grado {context.gradeName}</Badge>{context.period && <Badge>{context.period.name}</Badge>}</div></div>
         <div className="w-full min-w-64 md:w-72"><div className="mb-2 flex justify-between text-sm"><span className="font-semibold">{context.completed.length} de {total} docentes</span><span className="text-muted-foreground">{Math.round(progress)}%</span></div><Progress value={progress} label="Progreso de evaluaciones" /></div>
       </div>
-      {!context.period ? <Empty title="Actualmente no existe un periodo de evaluación activo." /> :
+      {!context.period ? <Empty title="Actualmente no existe una evaluación docente semestral habilitada." /> :
       context.pending.length === 0 ? <Empty title="Has completado todas tus evaluaciones." completed /> :
       <section className="py-9"><h2 className="text-xl font-semibold tracking-tight">Docentes pendientes</h2><div className="mt-5 divide-y rounded-xl border bg-card">{context.pending.map((teacher) => <div key={teacher.teacherId} className="grid gap-4 p-5 sm:grid-cols-[auto_1fr_auto] sm:items-center">
         <div className="grid size-12 place-items-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">{teacher.teacherName.split(" ").slice(0,2).map((n)=>n[0]).join("")}</div>

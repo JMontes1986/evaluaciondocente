@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPeriodSummary } from "@/lib/services/report-service";
 
 export async function GET(request:NextRequest){
-  const user=await requireAdmin(),periodId=request.nextUrl.searchParams.get("period");if(!periodId)return new Response("Periodo requerido",{status:400});
+  const user=await requireAdmin(),periodId=request.nextUrl.searchParams.get("period");if(!periodId)return new Response("Evaluación semestral requerida",{status:400});
   const summary=await getPeriodSummary(periodId);
   const table=new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
     new TableRow({children:["Docente","Promedio","Evaluaciones"].map(text=>new TableCell({children:[new Paragraph({children:[new TextRun({text,bold:true})]})]}))}),
@@ -14,7 +14,7 @@ export async function GET(request:NextRequest){
   const doc=new Document({sections:[{children:[
     new Paragraph({text:"COLEGIO FRANCISCANO AGUSTÍN GEMELLI",heading:HeadingLevel.HEADING_2}),
     new Paragraph({text:"EVALUACIÓN DOCENTE",heading:HeadingLevel.TITLE}),
-    new Paragraph({text:`Periodo: ${summary.period}`}),
+    new Paragraph({text:`Evaluación semestral: ${summary.period}`}),
     new Paragraph({text:`Número de evaluaciones: ${summary.evaluationCount}`}),
     new Paragraph({text:"Resultados consolidados por docente",heading:HeadingLevel.HEADING_1}),
     table,new Paragraph({text:"Informe agregado sin nombres, códigos ni identificadores de estudiantes."})

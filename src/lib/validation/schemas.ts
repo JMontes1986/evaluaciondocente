@@ -38,6 +38,16 @@ export const periodSchema = z.object({
   active: z.boolean().default(false),
   allowFeedback: z.boolean().default(true)
 }).refine((value) => new Date(value.endDate) > new Date(value.startDate), { message: "La fecha final debe ser posterior a la inicial." });
+export const semesterEvaluationSchema = z.object({
+  semester: z.enum(["primer", "segundo"]),
+  academicYearId: z.uuid(),
+  startDate: z.iso.date(),
+  endDate: z.iso.date(),
+  active: z.boolean().default(false),
+  allowFeedback: z.boolean().default(true)
+}).refine((value) => value.endDate >= value.startDate, {
+  message: "La fecha final debe ser igual o posterior a la inicial."
+});
 export const evaluationSchema = z.object({
   teacherId: z.uuid(),
   assignmentId: z.uuid(),
