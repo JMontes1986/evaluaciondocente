@@ -126,7 +126,7 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
         name="feedback"
         maxLength={2000}
         value={feedback}
-        aria-describedby="feedback-moderation"
+        aria-describedby={moderationStatus !== "idle" ? "feedback-moderation" : undefined}
         aria-invalid={moderationStatus === "blocked"}
         onChange={(event) => {
           const value = event.target.value;
@@ -136,36 +136,40 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
         }}
         placeholder="¿Deseas compartir alguna observación que ayude a mejorar la experiencia de aprendizaje?"
       />
-      <div
+      {(moderationStatus === "checking" || moderationStatus === "allowed") && <div
         id="feedback-moderation"
-        role={moderationStatus === "blocked" ? "alert" : "status"}
+        role="status"
         aria-live="polite"
         className={cn(
-          "flex min-h-12 items-center gap-3 rounded-lg border bg-secondary/30 px-3 py-2 text-sm",
-          moderationStatus === "blocked" && "text-destructive",
-          moderationStatus === "allowed" && "text-emerald-700",
-          (moderationStatus === "idle" || moderationStatus === "checking") && "text-muted-foreground"
+          "flex min-h-5 items-center gap-2 text-sm",
+          moderationStatus === "allowed" ? "text-emerald-700" : "text-muted-foreground"
         )}
+      >
+        {moderationStatus === "checking"
+          ? <LoaderCircle className="size-4 shrink-0 animate-spin" />
+          : <ShieldCheck className="size-4 shrink-0" />}
+        {moderationMessage}
+      </div>}
+      {moderationStatus === "blocked" && <div
+        id="feedback-moderation"
+        role="alert"
+        aria-live="assertive"
+        className="fixed inset-x-4 bottom-5 z-50 mx-auto flex max-w-lg items-center gap-4 rounded-2xl border border-destructive/30 bg-background p-4 text-sm text-destructive shadow-2xl sm:inset-x-auto sm:right-6 sm:mx-0"
       >
         <Image
           src={mollyImageUrl}
           alt="Molly IA"
-          width={44}
-          height={44}
-          sizes="44px"
-          className="size-11 shrink-0 rounded-full object-cover"
+          width={72}
+          height={72}
+          sizes="72px"
+          className="size-16 shrink-0 rounded-full object-cover ring-2 ring-destructive/20"
         />
-        <div className="flex items-center gap-2">
-          {moderationStatus === "checking" && <LoaderCircle className="size-4 shrink-0 animate-spin" />}
-          {moderationStatus === "allowed" && <ShieldCheck className="size-4 shrink-0" />}
-          {moderationStatus === "blocked" && <AlertCircle className="size-4 shrink-0" />}
-          <span>
-            {moderationStatus === "idle"
-              ? "Molly IA revisará automáticamente el comentario opcional antes de enviarlo."
-              : moderationMessage}
-          </span>
+        <div>
+          <p className="font-bold">Advertencia de Molly IA</p>
+          <p className="mt-1 leading-relaxed">{moderationMessage}</p>
+          <p className="mt-2 text-xs text-muted-foreground">Corrige o elimina el comentario para cerrar esta advertencia.</p>
         </div>
-      </div>
+      </div>}
       <p className="text-right text-xs text-muted-foreground">{feedback.length}/2000</p>
     </div>}
     {state.error && <p role="alert" className="flex gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive"><AlertCircle className="mt-0.5 size-4 shrink-0" />{state.error}</p>}
