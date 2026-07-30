@@ -1,5 +1,6 @@
 "use client";
 import { useActionState, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import * as RadioGroup from "@radix-ui/react-radio-group";
 import { AlertCircle, CheckCircle2, LoaderCircle, Send, ShieldCheck } from "lucide-react";
@@ -11,6 +12,8 @@ import { cn } from "@/lib/utils";
 
 interface Question { id: string; text: string; category: string | null; order_number: number }
 type ModerationStatus = "idle" | "checking" | "allowed" | "blocked";
+
+const mollyImageUrl = "https://aguevkykpwehckhiqbpe.supabase.co/storage/v1/object/public/MollyIA/Molly%20IA%20advertencia.webp";
 
 const options = [
   { score: 4, label: "Siempre" }, { score: 3, label: "Casi Siempre" },
@@ -54,19 +57,19 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
         };
         if (!response.ok || typeof result.allowed !== "boolean") {
           setModerationStatus("blocked");
-          setModerationMessage(result.error ?? "No fue posible revisar el comentario. Elimínalo o intenta nuevamente.");
+          setModerationMessage(result.error ?? "Molly IA no pudo revisar el comentario. Elimínalo o intenta nuevamente.");
           return;
         }
         setModerationStatus(result.allowed ? "allowed" : "blocked");
         setModerationMessage(
           result.allowed
-            ? "Comentario revisado: puedes enviar la evaluación."
-            : result.warning ?? "El comentario contiene lenguaje inapropiado. Modifícalo para continuar."
+            ? "Molly IA revisó el comentario: puedes enviar la evaluación."
+            : result.warning ?? "Molly IA detectó lenguaje inapropiado. Modifícalo para continuar."
         );
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
         setModerationStatus("blocked");
-        setModerationMessage("No fue posible revisar el comentario. Elimínalo o intenta nuevamente.");
+        setModerationMessage("Molly IA no pudo revisar el comentario. Elimínalo o intenta nuevamente.");
       }
     }, 650);
 
@@ -129,7 +132,7 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
           const value = event.target.value;
           setFeedback(value);
           setModerationStatus(value.trim() ? "checking" : "idle");
-          setModerationMessage(value.trim() ? "Revisando que el comentario sea apropiado…" : "");
+          setModerationMessage(value.trim() ? "Molly IA está revisando que el comentario sea apropiado…" : "");
         }}
         placeholder="¿Deseas compartir alguna observación que ayude a mejorar la experiencia de aprendizaje?"
       />
@@ -138,18 +141,30 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
         role={moderationStatus === "blocked" ? "alert" : "status"}
         aria-live="polite"
         className={cn(
-          "flex min-h-5 items-center gap-2 text-sm",
+          "flex min-h-12 items-center gap-3 rounded-lg border bg-secondary/30 px-3 py-2 text-sm",
           moderationStatus === "blocked" && "text-destructive",
           moderationStatus === "allowed" && "text-emerald-700",
           (moderationStatus === "idle" || moderationStatus === "checking") && "text-muted-foreground"
         )}
       >
-        {moderationStatus === "checking" && <LoaderCircle className="size-4 animate-spin" />}
-        {moderationStatus === "allowed" && <ShieldCheck className="size-4" />}
-        {moderationStatus === "blocked" && <AlertCircle className="size-4" />}
-        {moderationStatus === "idle"
-          ? "El comentario opcional será revisado automáticamente antes de enviarlo."
-          : moderationMessage}
+        <Image
+          src={mollyImageUrl}
+          alt="Molly IA"
+          width={44}
+          height={44}
+          sizes="44px"
+          className="size-11 shrink-0 rounded-full object-cover"
+        />
+        <div className="flex items-center gap-2">
+          {moderationStatus === "checking" && <LoaderCircle className="size-4 shrink-0 animate-spin" />}
+          {moderationStatus === "allowed" && <ShieldCheck className="size-4 shrink-0" />}
+          {moderationStatus === "blocked" && <AlertCircle className="size-4 shrink-0" />}
+          <span>
+            {moderationStatus === "idle"
+              ? "Molly IA revisará automáticamente el comentario opcional antes de enviarlo."
+              : moderationMessage}
+          </span>
+        </div>
       </div>
       <p className="text-right text-xs text-muted-foreground">{feedback.length}/2000</p>
     </div>}

@@ -37,7 +37,7 @@ export async function submitEvaluationAction(_state: EvaluationState, formData: 
     const moderation = await moderateEvaluationComment(parsed.data.feedback);
     if (!moderation.allowed) {
       return {
-        error: moderation.warning ?? "El comentario contiene lenguaje inapropiado. Modifícalo para continuar."
+        error: moderation.warning ?? "Molly IA detectó lenguaje inapropiado. Modifícalo para continuar."
       };
     }
   }

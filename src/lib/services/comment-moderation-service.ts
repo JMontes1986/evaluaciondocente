@@ -37,7 +37,7 @@ export async function moderateEvaluationComment(comment: string): Promise<Commen
     return {
       allowed: false,
       category: "obscene",
-      warning: "El comentario contiene lenguaje ofensivo o inapropiado. Elimínalo o escríbelo de forma respetuosa."
+      warning: "Molly IA detectó lenguaje ofensivo o inapropiado. Elimínalo o escríbelo de forma respetuosa."
     };
   }
 
@@ -46,7 +46,7 @@ export async function moderateEvaluationComment(comment: string): Promise<Commen
     return {
       allowed: false,
       category: "unavailable",
-      warning: "No fue posible revisar el comentario en este momento. Puedes eliminarlo o intentar nuevamente."
+      warning: "Molly IA no pudo revisar el comentario en este momento. Puedes eliminarlo o intentar nuevamente."
     };
   }
 
@@ -106,7 +106,9 @@ export async function moderateEvaluationComment(comment: string): Promise<Commen
       return {
         allowed: false,
         category: result.data.category,
-        warning: result.data.warning ?? "El comentario contiene lenguaje inapropiado. Modifícalo para continuar."
+        warning: result.data.warning
+          ? `Molly IA: ${result.data.warning}`
+          : "Molly IA detectó lenguaje inapropiado. Modifícalo para continuar."
       };
     }
 
@@ -119,7 +121,7 @@ export async function moderateEvaluationComment(comment: string): Promise<Commen
     return {
       allowed: false,
       category: "unavailable",
-      warning: "No fue posible revisar el comentario en este momento. Puedes eliminarlo o intentar nuevamente."
+      warning: "Molly IA no pudo revisar el comentario en este momento. Puedes eliminarlo o intentar nuevamente."
     };
   }
 }
