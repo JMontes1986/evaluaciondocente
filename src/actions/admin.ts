@@ -124,7 +124,6 @@ export async function saveSemesterEvaluationAction(formData: FormData) {
     .maybeSingle();
   const values = {
     name,
-    academic_year_id: parsed.data.academicYearId,
     start_date: `${parsed.data.startDate}T00:00:00-05:00`,
     end_date: `${parsed.data.endDate}T23:59:59-05:00`,
     active: parsed.data.active,
@@ -132,7 +131,10 @@ export async function saveSemesterEvaluationAction(formData: FormData) {
   };
   const result = existing
     ? await admin.from("evaluation_periods").update(values).eq("id", existing.id).select("id").single()
-    : await admin.from("evaluation_periods").insert(values).select("id").single();
+    : await admin.from("evaluation_periods").insert({
+        ...values,
+        academic_year_id: parsed.data.academicYearId
+      }).select("id").single();
   if (result.error) return;
 
   await audit(adminUser.id, "ADMIN_SAVE_SEMESTER_EVALUATION", "evaluation_periods", result.data.id);
