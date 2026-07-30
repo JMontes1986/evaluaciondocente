@@ -140,6 +140,7 @@ export async function saveSemesterEvaluationAction(formData: FormData) {
   await audit(adminUser.id, "ADMIN_SAVE_SEMESTER_EVALUATION", "evaluation_periods", result.data.id);
   revalidatePath("/administracion/periodos");
   revalidatePath("/administracion", "layout");
+  redirect("/administracion/periodos");
 }
 
 export async function createQuestionAction(formData: FormData) {
