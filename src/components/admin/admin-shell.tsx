@@ -20,7 +20,10 @@ export function AdminShell({
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    setCollapsed(window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
+    const frame = window.requestAnimationFrame(() => {
+      setCollapsed(window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   function toggleSidebar() {
@@ -62,6 +65,12 @@ export function AdminShell({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(255,255,255,.28)_transparent] [scrollbar-width:thin]">
           <AdminNav collapsed={collapsed} />
         </div>
+
+        {!collapsed && (
+          <p className="mt-4 shrink-0 border-t border-white/10 px-2 pt-4 text-[10px] leading-relaxed text-white/45">
+            © 2026 Colegio Franciscano Agustín Gemelli. Todos los derechos reservados.
+          </p>
+        )}
       </aside>
 
       <div className="min-w-0 lg:col-start-2">
