@@ -15,6 +15,7 @@ import {
   ScoreDistributionChart,
   TeacherGradeHeatmap
 } from "@/components/admin/dashboard-charts";
+import { AiDecisionAnalysis } from "@/components/admin/ai-decision-analysis";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDashboardData } from "@/lib/services/analytics-service";
@@ -140,6 +141,13 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           detail={data.lowestQuestion ? `${data.lowestQuestion.average} / 4 · ${data.lowestQuestion.question}` : undefined}
         />
       </section>
+
+      <AiDecisionAnalysis
+        configured={Boolean(process.env.GROQ_API_KEY)}
+        periodId={data.period?.id}
+        teacherId={teacherId}
+        gradeId={gradeId}
+      />
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <ChartSection

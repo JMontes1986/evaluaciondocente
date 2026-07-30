@@ -15,3 +15,4 @@ class MemoryRateLimiter implements RateLimiter {
 
 // Sustituir esta instancia por un adaptador Upstash Redis en despliegues con alto tráfico.
 export const studentLoginRateLimiter:RateLimiter=new MemoryRateLimiter(8,15*60*1000);
+export const adminAiRateLimiter:RateLimiter=new MemoryRateLimiter(5,10*60*1000);

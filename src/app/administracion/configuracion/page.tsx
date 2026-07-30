@@ -12,7 +12,8 @@ interface SettingsPageProps {
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
   const [settings, status] = await Promise.all([getSystemSettings(), searchParams]);
-  const aiConfigured = Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+  const aiConfigured = Boolean(process.env.GROQ_API_KEY);
+  const aiModel = process.env.GROQ_MODEL ?? "qwen/qwen3.6-27b";
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -88,17 +89,20 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h2 className="flex items-center gap-2 text-lg font-semibold">
-                <Bot className="size-5 text-primary" />Integración de inteligencia artificial
+                <Bot className="size-5 text-primary" />Integración de inteligencia artificial con Groq
               </h2>
               <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
                 La credencial se administra como secreto en Vercel y nunca se guarda ni se muestra en esta página.
               </p>
             </div>
-            <Badge>{aiConfigured ? "Credencial configurada" : "Sin credencial"}</Badge>
+            <div className="flex flex-wrap gap-2">
+              <Badge>{aiConfigured ? "Credencial configurada" : "Sin credencial"}</Badge>
+              <Badge>{aiModel}</Badge>
+            </div>
           </div>
           {!aiConfigured && (
             <p className="mt-4 rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-sm text-amber-950">
-              Para habilitar futuras funciones de análisis asistido, configura GOOGLE_GENERATIVE_AI_API_KEY en Vercel.
+              Para habilitar el análisis asistido del dashboard, configura GROQ_API_KEY en Vercel.
             </p>
           )}
         </div>
