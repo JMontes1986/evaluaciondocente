@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createTeacherAssignmentAction } from "@/actions/admin";
 import { PageHeading } from "@/components/admin/page-heading";
 import { StatusButton } from "@/components/admin/status-button";
@@ -5,14 +6,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export default async function AssignmentsPage() {
+interface AssignmentsPageProps {
+  searchParams: Promise<{ docente?: string }>;
+}
+
+export default async function AssignmentsPage({ searchParams }: AssignmentsPageProps) {
+  const { docente } = await searchParams;
+  const teacherId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(docente ?? "")
+    ? docente ?? ""
+    : "";
   const admin = createAdminClient();
+  let assignmentsQuery = admin
+    .from("teacher_assignments")
+    .select("id,teacher_id,grade_id,subject_id,academic_year_id,active")
+    .order("created_at", { ascending: false });
+  if (teacherId) assignmentsQuery = assignmentsQuery.eq("teacher_id", teacherId);
+
   const [{ data: rows }, { data: teachers }, { data: grades }, { data: subjects }, { data: years }] =
     await Promise.all([
-      admin
-        .from("teacher_assignments")
-        .select("id,teacher_id,grade_id,subject_id,academic_year_id,active")
-        .order("created_at", { ascending: false }),
+      assignmentsQuery,
       admin.from("teachers").select("id,full_name,active").order("full_name"),
       admin.from("grades").select("id,name,active").order("order_number"),
       admin.from("subjects").select("id,name,active").order("name"),
@@ -91,7 +103,35 @@ export default async function AssignmentsPage() {
         </Button>
       </form>
 
+      <form method="get" className="mb-5 grid gap-3 rounded-xl border bg-card p-5 sm:grid-cols-[1fr_auto_auto] sm:items-end">
+        <div>
+          <label htmlFor="assignment-teacher-filter" className="mb-2 block text-sm font-semibold">
+            Buscar asignaciones por docente
+          </label>
+          <select
+            id="assignment-teacher-filter"
+            name="docente"
+            defaultValue={teacherId}
+            className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm"
+          >
+            <option value="">Todos los docentes</option>
+            {teachers?.map((teacher) => (
+              <option key={teacher.id} value={teacher.id}>{teacher.full_name}</option>
+            ))}
+          </select>
+        </div>
+        <Button type="submit">Aplicar filtro</Button>
+        {teacherId && (
+          <Button asChild variant="outline">
+            <Link href="/administracion/asignaciones">Limpiar</Link>
+          </Button>
+        )}
+      </form>
+
       <div className="overflow-x-auto rounded-xl border bg-card">
+        <div className="border-b px-4 py-3 text-sm text-muted-foreground">
+          {rows?.length ?? 0} {(rows?.length ?? 0) === 1 ? "asignación encontrada" : "asignaciones encontradas"}
+        </div>
         <table className="w-full min-w-[820px] text-sm">
           <thead className="border-b bg-secondary/50 text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
@@ -122,7 +162,9 @@ export default async function AssignmentsPage() {
         </table>
         {!rows?.length && (
           <p className="p-10 text-center text-sm text-muted-foreground">
-            No hay asignaciones registradas. Usa el formulario para parametrizar los docentes.
+            {teacherId
+              ? "El docente seleccionado no tiene asignaciones registradas."
+              : "No hay asignaciones registradas. Usa el formulario para parametrizar los docentes."}
           </p>
         )}
       </div>
