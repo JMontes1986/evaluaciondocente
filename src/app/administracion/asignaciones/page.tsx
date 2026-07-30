@@ -31,12 +31,12 @@ export default async function AssignmentsPage() {
       <PageHeading
         eyebrow="Relaciones académicas"
         title="Asignaciones docentes"
-        description="Define qué asignatura dicta cada docente, en qué grado y durante qué año académico."
+        description="Define qué asignatura dicta cada docente en uno o varios grados durante el año académico."
       />
 
       <form
         action={createTeacherAssignmentAction}
-        className="mb-7 grid gap-3 rounded-xl border bg-card p-5 md:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_auto]"
+        className="mb-7 grid gap-4 rounded-xl border bg-card p-5 md:grid-cols-2 xl:grid-cols-3"
       >
         <select
           name="teacherId"
@@ -61,17 +61,6 @@ export default async function AssignmentsPage() {
           ))}
         </select>
         <select
-          name="gradeId"
-          required
-          className="min-h-11 rounded-lg border bg-background px-3 text-sm"
-          aria-label="Grado"
-        >
-          <option value="">Grado</option>
-          {grades?.filter((grade) => grade.active).map((grade) => (
-            <option key={grade.id} value={grade.id}>{grade.name}</option>
-          ))}
-        </select>
-        <select
           name="academicYearId"
           required
           className="min-h-11 rounded-lg border bg-background px-3 text-sm"
@@ -82,7 +71,24 @@ export default async function AssignmentsPage() {
             <option key={year.id} value={year.id}>{year.name}</option>
           ))}
         </select>
-        <Button type="submit">Guardar asignación</Button>
+        <fieldset className="rounded-xl border p-4 md:col-span-2 xl:col-span-3">
+          <legend className="px-2 text-sm font-semibold">Grados en los que dicta la asignatura</legend>
+          <p className="mb-3 text-xs text-muted-foreground">Marca todos los grados que correspondan.</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+            {grades?.filter((grade) => grade.active).map((grade) => (
+              <label
+                key={grade.id}
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border bg-background px-3 text-sm font-medium hover:bg-secondary"
+              >
+                <input name="gradeIds" type="checkbox" value={grade.id} className="size-4 accent-primary" />
+                {grade.name}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        <Button type="submit" className="md:col-span-2 md:justify-self-end xl:col-span-3">
+          Guardar asignaciones
+        </Button>
       </form>
 
       <div className="overflow-x-auto rounded-xl border bg-card">

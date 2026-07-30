@@ -16,7 +16,7 @@ export const studentSchema = z.object({
 export const teacherAssignmentSchema = z.object({
   teacherId: z.uuid(),
   subjectId: z.uuid(),
-  gradeId: z.uuid(),
+  gradeIds: z.array(z.uuid()).min(1).max(20),
   academicYearId: z.uuid()
 });
 export const subjectSchema = z.object({

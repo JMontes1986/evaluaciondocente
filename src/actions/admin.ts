@@ -40,25 +40,26 @@ export async function createTeacherAssignmentAction(formData: FormData) {
   const parsed = teacherAssignmentSchema.safeParse({
     teacherId: formData.get("teacherId"),
     subjectId: formData.get("subjectId"),
-    gradeId: formData.get("gradeId"),
+    gradeIds: formData.getAll("gradeIds"),
     academicYearId: formData.get("academicYearId")
   });
   if (!parsed.success) return;
 
   const admin = createAdminClient();
-  const { data } = await admin
+  const records = parsed.data.gradeIds.map((gradeId) => ({
+    teacher_id: parsed.data.teacherId,
+    subject_id: parsed.data.subjectId,
+    grade_id: gradeId,
+    academic_year_id: parsed.data.academicYearId,
+    active: true
+  }));
+  const { data, error } = await admin
     .from("teacher_assignments")
-    .upsert({
-      teacher_id: parsed.data.teacherId,
-      subject_id: parsed.data.subjectId,
-      grade_id: parsed.data.gradeId,
-      academic_year_id: parsed.data.academicYearId,
-      active: true
-    }, { onConflict: "teacher_id,grade_id,subject_id,academic_year_id" })
-    .select("id")
-    .single();
+    .upsert(records, { onConflict: "teacher_id,grade_id,subject_id,academic_year_id" })
+    .select("id");
+  if (error) return;
 
-  await audit(adminUser.id, "ADMIN_UPSERT_TEACHER_ASSIGNMENT", "teacher_assignments", data?.id);
+  await audit(adminUser.id, "ADMIN_BULK_UPSERT_TEACHER_ASSIGNMENTS", "teacher_assignments", data?.[0]?.id);
   revalidatePath("/administracion/asignaciones");
   revalidatePath("/evaluacion");
 }
