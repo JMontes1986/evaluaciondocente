@@ -25,6 +25,7 @@ const items = [
   ["/administracion/evaluaciones", "Evaluaciones", ClipboardCheck],
   ["/administracion/seguimiento-estudiantes", "Seguimiento", ClipboardList],
   ["/administracion/docentes", "Docentes", UsersRound],
+  ["/administracion/resultados-docentes", "Resultados docentes", ChartNoAxesCombined],
   ["/administracion/estudiantes", "Estudiantes", GraduationCap],
   ["/administracion/grados", "Grados", BarChart3],
   ["/administracion/asignaturas", "Asignaturas", BookOpen],
