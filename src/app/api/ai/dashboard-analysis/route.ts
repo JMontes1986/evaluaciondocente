@@ -1,3 +1,4 @@
+import { encode } from "@toon-format/toon";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/permissions";
 import { adminAiRateLimiter } from "@/lib/security/rate-limit";
@@ -72,6 +73,7 @@ export async function POST(request: Request) {
     })),
     teacherGradePerformance: data.scatter
   };
+  const analyticalDataToon = encode(analyticalData, { delimiter: "\t" });
 
   const upstream = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -95,7 +97,12 @@ export async function POST(request: Request) {
         },
         {
           role: "user",
-          content: `Genera un análisis para toma de decisiones con estos datos:\n${JSON.stringify(analyticalData)}`
+          content: [
+            "Genera un an\u00e1lisis para toma de decisiones con estos datos en formato TOON:",
+            "```toon",
+            analyticalDataToon,
+            "```"
+          ].join("\n")
         }
       ],
       temperature: 0.6,
