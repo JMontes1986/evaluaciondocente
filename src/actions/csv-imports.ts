@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth/permissions";
+import { requireModule } from "@/lib/auth/permissions";
 import { decodeCsvBytes, findCsvColumn, normalizeCsvValue, parseCsv } from "@/lib/imports/csv";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { studentCodeSchema, teacherSchema } from "@/lib/validation/schemas";
@@ -56,7 +56,7 @@ export async function importTeachersCsvAction(
   _state: CsvImportState,
   formData: FormData
 ): Promise<CsvImportState> {
-  const user = await requireAdmin();
+  const user = await requireModule("docentes");
 
   try {
     const { file, table } = await readCsvFile(formData);
@@ -162,7 +162,7 @@ export async function importStudentsCsvAction(
   _state: CsvImportState,
   formData: FormData
 ): Promise<CsvImportState> {
-  const user = await requireAdmin();
+  const user = await requireModule("estudiantes");
 
   try {
     const { file, table } = await readCsvFile(formData);

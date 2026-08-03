@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth/permissions";
+import { requireModule } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function releaseStudentEvaluationAction(formData: FormData) {
-  const adminUser = await requireAdmin();
+  const adminUser = await requireModule("seguimiento");
   const parsed = z.uuid().safeParse(formData.get("evaluationId"));
   if (!parsed.success) return;
 

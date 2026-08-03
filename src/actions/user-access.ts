@@ -211,4 +211,3 @@ export async function updateRestrictedUserAction(
   return { status: "success", message: "Acceso actualizado correctamente." };
 }
 
-export { ADMIN_MODULE_KEYS };
