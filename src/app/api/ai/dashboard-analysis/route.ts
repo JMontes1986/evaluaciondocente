@@ -12,6 +12,13 @@ const requestSchema = z.object({
   gradeId: z.uuid().optional()
 });
 
+const completionSchema = z.object({
+  choices: z.array(z.object({
+    message: z.object({ content: z.string().nullable().optional() }),
+    finish_reason: z.string().nullable().optional()
+  })).min(1)
+});
+
 export async function POST(request: Request) {
   const adminUser = await requireAdmin();
   const rateLimit = await adminAiRateLimiter.check(`dashboard-ai:${adminUser.id}`);
@@ -92,11 +99,10 @@ export async function POST(request: Request) {
         }
       ],
       temperature: 0.6,
-      max_completion_tokens: 2048,
-      top_p: 0.95,
-      reasoning_effort: "default",
-      reasoning_format: "hidden",
-      stream: true
+      max_completion_tokens: 4096,
+      top_p: 0.8,
+      reasoning_effort: "none",
+      stream: false
     }),
     signal: AbortSignal.timeout(55_000)
   });
@@ -105,6 +111,21 @@ export async function POST(request: Request) {
     const detail = await upstream.text();
     console.error("Groq dashboard analysis failed", upstream.status, detail.slice(0, 500));
     return Response.json({ error: "Groq no pudo generar el análisis. Intenta nuevamente." }, { status: 502 });
+  }
+
+  const completion = completionSchema.safeParse(await upstream.json());
+  if (!completion.success) {
+    console.error("Groq dashboard analysis returned an invalid completion");
+    return Response.json({ error: "Groq devolvi\u00f3 una respuesta inv\u00e1lida. Intenta nuevamente." }, { status: 502 });
+  }
+
+  const analysis = completion.data.choices[0].message.content?.trim();
+  if (!analysis) {
+    console.error(
+      "Groq dashboard analysis returned no content",
+      completion.data.choices[0].finish_reason ?? "unknown"
+    );
+    return Response.json({ error: "Groq no devolvi\u00f3 contenido. Intenta nuevamente." }, { status: 502 });
   }
 
   await createAdminClient().from("audit_logs").insert({
@@ -120,11 +141,9 @@ export async function POST(request: Request) {
     }
   });
 
-  return new Response(upstream.body, {
-    status: 200,
+  return Response.json({ analysis }, {
     headers: {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-store",
+      "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff"
     }
   });

@@ -42,40 +42,18 @@ export function AiDecisionAnalysis({
         body: JSON.stringify({ periodId, teacherId, gradeId }),
         signal: controller.signal
       });
+      const payload = await response.json().catch(() => null) as {
+        analysis?: string;
+        error?: string;
+      } | null;
       if (!response.ok) {
-        const payload = await response.json().catch(() => null) as { error?: string } | null;
-        throw new Error(payload?.error ?? "No fue posible generar el análisis.");
+        throw new Error(payload?.error ?? "No fue posible generar el an\u00e1lisis.");
       }
-      if (!response.body) throw new Error("Groq no devolvió contenido.");
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let receivedContent = false;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        buffer = buffer.replace(/\r\n/g, "\n");
-        const events = buffer.split("\n\n");
-        buffer = events.pop() ?? "";
-        for (const event of events) {
-          for (const line of event.split("\n")) {
-            if (!line.startsWith("data: ")) continue;
-            const content = line.slice(6);
-            if (content === "[DONE]") continue;
-            const chunk = JSON.parse(content) as {
-              choices?: { delta?: { content?: string | null } }[];
-            };
-            const text = chunk.choices?.[0]?.delta?.content;
-            if (text && requestIdRef.current === requestId) {
-              receivedContent = true;
-              setAnalysis((current) => current + text);
-            }
-          }
-        }
+      const generatedAnalysis = payload?.analysis?.trim();
+      if (!generatedAnalysis) {
+        throw new Error("Groq termin\u00f3 la solicitud sin devolver un an\u00e1lisis.");
       }
-      if (!receivedContent) throw new Error("Groq terminó la solicitud sin devolver un análisis.");
+      if (requestIdRef.current === requestId) setAnalysis(generatedAnalysis);
     } catch (caught) {
       if (requestIdRef.current === requestId) {
         if (caught instanceof DOMException && caught.name === "AbortError") {
