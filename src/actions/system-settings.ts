@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth/permissions";
+import { requireSuperAdmin } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const systemSettingsSchema = z.object({
@@ -12,7 +12,7 @@ const systemSettingsSchema = z.object({
 });
 
 export async function updateSystemSettingsAction(formData: FormData) {
-  const adminUser = await requireAdmin();
+  const adminUser = await requireSuperAdmin();
   const parsed = systemSettingsSchema.safeParse({
     minResponses: formData.get("minResponses"),
     studentSessionMinutes: formData.get("studentSessionMinutes")

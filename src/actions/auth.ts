@@ -1,23 +1,50 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { ADMIN_MODULE_KEYS, firstModulePath, type AdminModuleKey } from "@/lib/auth/modules";
 import { createClient } from "@/lib/supabase/server";
 import { loginSchema } from "@/lib/validation/schemas";
+import type { AppRole } from "@/types/database.types";
 
 export interface FormState { error?: string; success?: string }
+
+const fullAccessRoles: AppRole[] = ["SUPER_ADMIN", "ADMIN"];
+const restrictedRoles: AppRole[] = ["RECTOR", "DIRECTIVO", "COORDINADOR"];
 
 export async function loginAction(_state: FormState, formData: FormData): Promise<FormState> {
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return { error: "Revisa el correo y la contraseña." };
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error || !data.user) return { error: "No fue posible iniciar sesión con esas credenciales." };
-  const { data: profile } = await supabase.from("profiles").select("active,role").eq("id", data.user.id).maybeSingle();
-  if (!profile?.active || !["ADMIN", "SUPER_ADMIN"].includes(profile.role)) {
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("active,role")
+    .eq("id", data.user.id)
+    .maybeSingle();
+  if (!profile?.active || (!fullAccessRoles.includes(profile.role) && !restrictedRoles.includes(profile.role))) {
     await supabase.auth.signOut();
     return { error: "La cuenta no tiene acceso administrativo activo." };
   }
-  redirect("/administracion");
+
+  let modules: AdminModuleKey[] = [...ADMIN_MODULE_KEYS];
+  if (!fullAccessRoles.includes(profile.role)) {
+    const { data: permissions } = await supabase
+      .from("profile_module_permissions")
+      .select("module_key")
+      .eq("profile_id", data.user.id);
+    modules = (permissions ?? [])
+      .map((permission) => permission.module_key)
+      .filter((module): module is AdminModuleKey => ADMIN_MODULE_KEYS.includes(module as AdminModuleKey));
+  }
+  if (!modules.length) {
+    await supabase.auth.signOut();
+    return { error: "La cuenta no tiene módulos autorizados." };
+  }
+
+  redirect(firstModulePath(modules));
 }
 
 export async function logoutAction() {

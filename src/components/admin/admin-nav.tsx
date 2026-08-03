@@ -18,32 +18,44 @@ import {
   UserCog,
   UsersRound
 } from "lucide-react";
+import type { AdminModuleKey } from "@/lib/auth/modules";
 import { cn } from "@/lib/utils";
 
 const items = [
-  ["/administracion", "Dashboard", LayoutDashboard],
-  ["/administracion/evaluaciones", "Evaluaciones", ClipboardCheck],
-  ["/administracion/seguimiento-estudiantes", "Seguimiento", ClipboardList],
-  ["/administracion/docentes", "Docentes", UsersRound],
-  ["/administracion/resultados-docentes", "Resultados docentes", ChartNoAxesCombined],
-  ["/administracion/estudiantes", "Estudiantes", GraduationCap],
-  ["/administracion/grados", "Grados", BarChart3],
-  ["/administracion/asignaturas", "Asignaturas", BookOpen],
-  ["/administracion/asignaciones", "Asignaciones", ListChecks],
-  ["/administracion/preguntas", "Preguntas", ChartNoAxesCombined],
-  ["/administracion/periodos", "Semestres", CalendarRange],
-  ["/administracion/informes", "Informes", FileText],
-  ["/administracion/importaciones", "Importaciones", FileSpreadsheet],
-  ["/administracion/usuarios", "Usuarios", UserCog],
-  ["/administracion/configuracion", "Configuración", Settings]
+  ["/administracion", "Dashboard", LayoutDashboard, "dashboard"],
+  ["/administracion/evaluaciones", "Evaluaciones", ClipboardCheck, "evaluaciones"],
+  ["/administracion/seguimiento-estudiantes", "Seguimiento", ClipboardList, "seguimiento"],
+  ["/administracion/docentes", "Docentes", UsersRound, "docentes"],
+  ["/administracion/resultados-docentes", "Resultados docentes", ChartNoAxesCombined, "resultados_docentes"],
+  ["/administracion/estudiantes", "Estudiantes", GraduationCap, "estudiantes"],
+  ["/administracion/grados", "Grados", BarChart3, "grados"],
+  ["/administracion/asignaturas", "Asignaturas", BookOpen, "asignaturas"],
+  ["/administracion/asignaciones", "Asignaciones", ListChecks, "asignaciones"],
+  ["/administracion/preguntas", "Preguntas", ChartNoAxesCombined, "preguntas"],
+  ["/administracion/periodos", "Semestres", CalendarRange, "periodos"],
+  ["/administracion/informes", "Informes", FileText, "informes"],
+  ["/administracion/importaciones", "Importaciones", FileSpreadsheet, "importaciones"],
+  ["/administracion/usuarios", "Usuarios", UserCog, "super_admin"],
+  ["/administracion/configuracion", "Configuración", Settings, "super_admin"]
 ] as const;
 
-export function AdminNav({ collapsed = false }: { collapsed?: boolean }) {
+export function AdminNav({
+  collapsed = false,
+  modules,
+  isSuperAdmin
+}: {
+  collapsed?: boolean;
+  modules: AdminModuleKey[];
+  isSuperAdmin: boolean;
+}) {
   const pathname = usePathname();
+  const visibleItems = items.filter(([, , , permission]) =>
+    permission === "super_admin" ? isSuperAdmin : modules.includes(permission)
+  );
 
   return (
     <nav aria-label="Navegación administrativa" className="space-y-1">
-      {items.map(([href, label, Icon]) => {
+      {visibleItems.map(([href, label, Icon]) => {
         const active = href === "/administracion" ? pathname === href : pathname.startsWith(href);
         return (
           <Link

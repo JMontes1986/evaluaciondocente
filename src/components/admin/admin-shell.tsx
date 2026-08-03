@@ -6,15 +6,20 @@ import { logoutAction } from "@/actions/auth";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import type { AdminModuleKey } from "@/lib/auth/modules";
 import { cn } from "@/lib/utils";
 
 const SIDEBAR_STORAGE_KEY = "admin-sidebar-collapsed";
 
 export function AdminShell({
   user,
+  modules,
+  isSuperAdmin,
   children
 }: {
   user: { fullName: string; role: string };
+  modules: AdminModuleKey[];
+  isSuperAdmin: boolean;
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -63,14 +68,14 @@ export function AdminShell({
         </button>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 [scrollbar-color:rgba(255,255,255,.28)_transparent] [scrollbar-width:thin]">
-          <AdminNav collapsed={collapsed} />
+          <AdminNav collapsed={collapsed} modules={modules} isSuperAdmin={isSuperAdmin} />
         </div>
 
-        {!collapsed && (
+        {!collapsed ? (
           <p className="mt-4 shrink-0 border-t border-white/10 px-2 pt-4 text-[10px] leading-relaxed text-white/45">
             © 2026 Colegio Franciscano Agustín Gemelli. Todos los derechos reservados.
           </p>
-        )}
+        ) : null}
       </aside>
 
       <div className="min-w-0 lg:col-start-2">
