@@ -1,11 +1,20 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { average, scorePercentage } from "../src/lib/calculations/scores";
+import {
+  average,
+  formatScore,
+  formatScorePercentage,
+  formatScoreResult,
+  scorePercentage
+} from "../src/lib/calculations/scores";
 import { evaluationSchema, studentCodeSchema } from "../src/lib/validation/schemas";
 
 test("calcula promedio y porcentaje institucional", () => {
   assert.equal(average([4, 3, 4, 3.4]), 3.6);
   assert.equal(scorePercentage(3.6), 90);
+  assert.equal(formatScore(3.75), "3,75");
+  assert.equal(formatScorePercentage(3.75), "93,8 %");
+  assert.equal(formatScoreResult(3.75), "3,75 / 4 · 93,8 %");
 });
 
 test("rechaza puntajes fuera del rango", () => {

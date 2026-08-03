@@ -18,6 +18,7 @@ import {
 import { AiDecisionAnalysis } from "@/components/admin/ai-decision-analysis";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatScoreResult } from "@/lib/calculations/scores";
 import { getDashboardData } from "@/lib/services/analytics-service";
 
 export const metadata = { title: "Dashboard analítico" };
@@ -43,7 +44,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
     ["Evaluaciones analizadas", data.metrics.evaluations, ClipboardCheck],
     ["Estudiantes participantes", data.metrics.students, GraduationCap],
     ["Docentes evaluados", data.metrics.teachers, UsersRound],
-    ["Promedio general", `${data.metrics.average} / 4`, Star]
+    ["Promedio general", formatScoreResult(data.metrics.average), Star]
   ] as const;
 
   return (
@@ -121,24 +122,24 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         <InsightCard
           title="Docente con mayor promedio"
           value={data.highestTeacher?.name}
-          detail={data.highestTeacher ? `${data.highestTeacher.average} / 4 · ${data.highestTeacher.responses} evaluaciones` : undefined}
+          detail={data.highestTeacher ? `${formatScoreResult(data.highestTeacher.average)} · ${data.highestTeacher.responses} evaluaciones` : undefined}
           positive
         />
         <InsightCard
           title="Docente que requiere atención"
           value={data.lowestTeacher?.name}
-          detail={data.lowestTeacher ? `${data.lowestTeacher.average} / 4 · ${data.lowestTeacher.responses} evaluaciones` : undefined}
+          detail={data.lowestTeacher ? `${formatScoreResult(data.lowestTeacher.average)} · ${data.lowestTeacher.responses} evaluaciones` : undefined}
         />
         <InsightCard
           title="Pregunta mejor valorada"
           value={data.highestQuestion?.label}
-          detail={data.highestQuestion ? `${data.highestQuestion.average} / 4 · ${data.highestQuestion.question}` : undefined}
+          detail={data.highestQuestion ? `${formatScoreResult(data.highestQuestion.average)} · ${data.highestQuestion.question}` : undefined}
           positive
         />
         <InsightCard
           title="Pregunta prioritaria"
           value={data.lowestQuestion?.label}
-          detail={data.lowestQuestion ? `${data.lowestQuestion.average} / 4 · ${data.lowestQuestion.question}` : undefined}
+          detail={data.lowestQuestion ? `${formatScoreResult(data.lowestQuestion.average)} · ${data.lowestQuestion.question}` : undefined}
         />
       </section>
 

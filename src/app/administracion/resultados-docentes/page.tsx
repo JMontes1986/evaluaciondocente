@@ -4,6 +4,7 @@ import { PageHeading } from "@/components/admin/page-heading";
 import { QuestionDistributionChart } from "@/components/admin/teacher-results-charts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatScore, formatScorePercentage } from "@/lib/calculations/scores";
 import { getTeacherResults } from "@/lib/services/teacher-results-service";
 
 export const metadata = { title: "Resultados por docente" };
@@ -110,8 +111,9 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
                 <p className="mt-2 text-sm text-white/60">{data.teacher.email ?? "Sin correo institucional registrado"}</p>
               </div>
               <div className="md:text-right">
-                <p className="font-mono text-4xl font-semibold">{report.average.toFixed(2)}</p>
-                <p className="mt-1 text-xs text-white/55">Promedio general sobre 4</p>
+                <p className="font-mono text-4xl font-semibold">{formatScore(report.average)} / 4</p>
+                <p className="mt-1 font-mono text-sm font-semibold text-white/70">{formatScorePercentage(report.average)}</p>
+                <p className="mt-1 text-xs text-white/55">Promedio general</p>
               </div>
             </div>
             <div className="grid border-t border-white/10 sm:grid-cols-3">
@@ -253,7 +255,12 @@ function QuestionInsight({
           <p className="font-mono text-sm font-bold">{question?.label ?? "Sin datos"}</p>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed">{question?.question ?? "No hay preguntas analizadas."}</p>
         </div>
-        {question ? <span className="shrink-0 font-mono text-2xl font-semibold">{question.average.toFixed(2)}</span> : null}
+        {question ? (
+          <span className="shrink-0 text-right font-mono">
+            <span className="block text-2xl font-semibold">{formatScore(question.average)} / 4</span>
+            <span className="mt-1 block text-xs font-semibold text-muted-foreground">{formatScorePercentage(question.average)}</span>
+          </span>
+        ) : null}
       </div>
     </article>
   );
