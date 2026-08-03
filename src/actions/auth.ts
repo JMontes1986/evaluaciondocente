@@ -9,7 +9,7 @@ import type { AppRole } from "@/types/database.types";
 export interface FormState { error?: string; success?: string }
 
 const fullAccessRoles: AppRole[] = ["SUPER_ADMIN", "ADMIN"];
-const restrictedRoles: AppRole[] = ["RECTOR", "DIRECTIVO", "COORDINADOR"];
+const restrictedRoles: AppRole[] = ["RECTOR", "DIRECTIVO", "COORDINADOR", "DOCENTE"];
 
 export async function loginAction(_state: FormState, formData: FormData): Promise<FormState> {
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });

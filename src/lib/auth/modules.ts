@@ -18,6 +18,9 @@ export type AdminModuleKey = typeof ADMIN_MODULES[number]["key"];
 
 export const ADMIN_MODULE_KEYS = ADMIN_MODULES.map((module) => module.key) as AdminModuleKey[];
 
+/** Módulos de consulta disponibles para las cuentas usadas por docentes. */
+export const TEACHER_READ_ONLY_MODULES: AdminModuleKey[] = ["dashboard", "resultados_docentes"];
+
 export function isAdminModuleKey(value: string): value is AdminModuleKey {
   return ADMIN_MODULE_KEYS.includes(value as AdminModuleKey);
 }

@@ -25,7 +25,7 @@ export function UserAccessManager({ users }: { users: RestrictedUser[] }) {
             <p className="text-xs font-semibold uppercase tracking-[.16em] text-primary">Solo SUPER_ADMIN</p>
             <h2 className="mt-2 text-xl font-semibold">Usuarios con acceso limitado</h2>
             <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-              Crea cuentas directivas y define exactamente cuáles módulos pueden consultar o administrar.
+              Crea cuentas directivas o de consulta docente y define los módulos disponibles.
             </p>
           </div>
           <Badge>{users.length} cuentas limitadas</Badge>
@@ -42,7 +42,8 @@ export function UserAccessManager({ users }: { users: RestrictedUser[] }) {
             <Input id="restricted-email" name="email" type="email" required autoComplete="off" />
           </Field>
           <Field label="Rol institucional" htmlFor="restricted-role">
-            <select id="restricted-role" name="role" required defaultValue="DIRECTIVO" className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm">
+            <select id="restricted-role" name="role" required defaultValue="DOCENTE" className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm">
+              <option value="DOCENTE">Docente (solo resultados)</option>
               <option value="DIRECTIVO">Directivo / Directora académica</option>
               <option value="RECTOR">Rectoría</option>
               <option value="COORDINADOR">Coordinación</option>
@@ -54,7 +55,10 @@ export function UserAccessManager({ users }: { users: RestrictedUser[] }) {
           </Field>
         </div>
 
-        <ModuleSelector idPrefix="create-user" defaultModules={["dashboard", "resultados_docentes", "informes"]} />
+        <ModuleSelector idPrefix="create-user" defaultModules={["dashboard", "resultados_docentes"]} />
+        <p className="mt-3 text-xs text-muted-foreground">
+          Para el rol Docente, el sistema asigna únicamente Dashboard y Resultados docentes, sin permisos de administración.
+        </p>
 
         {state.status !== "idle" ? <AccessMessage state={state} /> : null}
         <div className="mt-5 max-w-xs"><FormSubmitButton pendingLabel="Creando cuenta…">Crear usuario y asignar acceso</FormSubmitButton></div>
@@ -101,6 +105,7 @@ function UserPermissionEditor({ user }: { user: RestrictedUser }) {
           </Field>
           <Field label="Rol institucional" htmlFor={`role-${user.id}`}>
             <select id={`role-${user.id}`} name="role" required defaultValue={user.role} className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm">
+              <option value="DOCENTE">Docente (solo resultados)</option>
               <option value="DIRECTIVO">Directivo / Directora académica</option>
               <option value="RECTOR">Rectoría</option>
               <option value="COORDINADOR">Coordinación</option>

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { requireAdmin } from "@/lib/auth/permissions";
+import { requireModule } from "@/lib/auth/permissions";
 import { getSystemSettings } from "@/lib/services/system-settings-service";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -86,7 +86,7 @@ export async function getTeacherResults({
   teacherId?: string;
   periodId?: string;
 }) {
-  await requireAdmin();
+  await requireModule("resultados_docentes");
   const admin = createAdminClient();
   const now = new Date().toISOString();
   const [{ data: teachers }, { data: periods }, settings] = await Promise.all([

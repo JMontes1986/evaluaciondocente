@@ -1,4 +1,5 @@
 import "server-only";
+import { requireModule } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSystemSettings } from "@/lib/services/system-settings-service";
 
@@ -102,6 +103,7 @@ function average(sum: number, count: number) {
 }
 
 export async function getDashboardData(filters: DashboardFilters = {}) {
+  await requireModule("dashboard");
   const admin = createAdminClient();
   const now = new Date().toISOString();
   const [{ data: periods }, { data: teachers }, { data: grades }, { data: questions }, systemSettings] = await Promise.all([

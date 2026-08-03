@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { ADMIN_MODULE_KEYS, isAdminModuleKey, type AdminModuleKey } from "@/lib/auth/modules";
+import { isAdminModuleKey, TEACHER_READ_ONLY_MODULES, type AdminModuleKey } from "@/lib/auth/modules";
 import { requireSuperAdmin } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AppRole } from "@/types/database.types";
@@ -16,12 +16,12 @@ export interface RestrictedUser {
   id: string;
   fullName: string;
   email: string;
-  role: "RECTOR" | "DIRECTIVO" | "COORDINADOR";
+  role: "RECTOR" | "DIRECTIVO" | "COORDINADOR" | "DOCENTE";
   active: boolean;
   modules: AdminModuleKey[];
 }
 
-const restrictedRoleSchema = z.enum(["RECTOR", "DIRECTIVO", "COORDINADOR"]);
+const restrictedRoleSchema = z.enum(["RECTOR", "DIRECTIVO", "COORDINADOR", "DOCENTE"]);
 const passwordSchema = z.string()
   .min(12)
   .max(128)
@@ -33,6 +33,10 @@ function selectedModules(formData: FormData) {
   return [...new Set(formData.getAll("modules").map(String).filter(isAdminModuleKey))];
 }
 
+function allowedModules(role: RestrictedUser["role"], formData: FormData) {
+  return role === "DOCENTE" ? [...TEACHER_READ_ONLY_MODULES] : selectedModules(formData);
+}
+
 export async function getRestrictedUsers(): Promise<RestrictedUser[]> {
   await requireSuperAdmin();
   const admin = createAdminClient();
@@ -40,7 +44,7 @@ export async function getRestrictedUsers(): Promise<RestrictedUser[]> {
     admin
       .from("profiles")
       .select("id,full_name,role,active")
-      .in("role", ["RECTOR", "DIRECTIVO", "COORDINADOR"])
+      .in("role", ["RECTOR", "DIRECTIVO", "COORDINADOR", "DOCENTE"])
       .order("full_name"),
     admin.from("profile_module_permissions").select("profile_id,module_key"),
     admin.auth.admin.listUsers({ page: 1, perPage: 200 })
@@ -69,7 +73,6 @@ export async function createRestrictedUserAction(
   formData: FormData
 ): Promise<UserAccessState> {
   const superAdmin = await requireSuperAdmin();
-  const modules = selectedModules(formData);
   const parsed = z.object({
     fullName: z.string().trim().min(3).max(180),
     email: z.email(),
@@ -81,6 +84,7 @@ export async function createRestrictedUserAction(
     password: formData.get("password"),
     role: formData.get("role")
   });
+  const modules = parsed.success ? allowedModules(parsed.data.role, formData) : [];
   if (!parsed.success || modules.length === 0) {
     return { status: "error", message: "Revisa los datos y selecciona al menos un módulo." };
   }
@@ -142,7 +146,6 @@ export async function updateRestrictedUserAction(
   formData: FormData
 ): Promise<UserAccessState> {
   const superAdmin = await requireSuperAdmin();
-  const modules = selectedModules(formData);
   const parsed = z.object({
     profileId: z.uuid(),
     fullName: z.string().trim().min(3).max(180),
@@ -154,6 +157,7 @@ export async function updateRestrictedUserAction(
     role: formData.get("role"),
     active: formData.get("active") === "on"
   });
+  const modules = parsed.success ? allowedModules(parsed.data.role, formData) : [];
   if (!parsed.success || modules.length === 0) {
     return { status: "error", message: "Selecciona al menos un módulo y revisa los datos." };
   }

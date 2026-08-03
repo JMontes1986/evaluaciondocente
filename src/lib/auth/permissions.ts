@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database.types";
 
 const fullAccessRoles: AppRole[] = ["SUPER_ADMIN", "ADMIN"];
-const restrictedRoles: AppRole[] = ["RECTOR", "DIRECTIVO", "COORDINADOR"];
+const restrictedRoles: AppRole[] = ["RECTOR", "DIRECTIVO", "COORDINADOR", "DOCENTE"];
 
 export interface AdminIdentity {
   id: string;
