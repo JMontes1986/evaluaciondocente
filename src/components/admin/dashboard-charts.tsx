@@ -16,6 +16,7 @@ import {
   YAxis,
   ZAxis
 } from "recharts";
+import { scorePercentage } from "@/lib/calculations/scores";
 import type {
   AverageDatum,
   HeatmapDatum,
@@ -179,6 +180,31 @@ function heatColor(value: number) {
   return "bg-red-100 text-red-900";
 }
 
+function HeatmapScore({
+  average,
+  responses,
+  emphasized = false
+}: {
+  average: number;
+  responses: number;
+  emphasized?: boolean;
+}) {
+  const percentage = scorePercentage(average).toLocaleString("es-CO", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  });
+
+  return (
+    <span
+      title={`${responses} evaluaciones · Promedio ${average} / 4 · ${percentage} %`}
+      className={`block min-w-24 rounded-md px-2 py-2 font-mono ${heatColor(average)} ${emphasized ? "ring-1 ring-inset ring-current/20" : ""}`}
+    >
+      <span className="block text-sm font-bold leading-none">{average}</span>
+      <span className="mt-1 block text-[10px] font-semibold leading-none opacity-75">{percentage} %</span>
+    </span>
+  );
+}
+
 export function TeacherGradeHeatmap({
   data,
   grades
@@ -190,7 +216,7 @@ export function TeacherGradeHeatmap({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[760px] border-separate border-spacing-1 text-sm">
+      <table className="w-full min-w-[900px] border-separate border-spacing-1 text-sm">
         <thead>
           <tr>
             <th className="p-2 text-left text-xs uppercase text-muted-foreground">Docente</th>
@@ -199,6 +225,9 @@ export function TeacherGradeHeatmap({
                 {grade.name}
               </th>
             ))}
+            <th className="border-l border-border p-2 pl-3 text-center text-xs uppercase text-muted-foreground">
+              Total docente
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -210,18 +239,20 @@ export function TeacherGradeHeatmap({
                 return (
                   <td key={grade.id} className="p-0.5 text-center">
                     {cell ? (
-                      <span
-                        title={`${cell.responses} evaluaciones`}
-                        className={`block rounded-md px-2 py-3 font-mono font-bold ${heatColor(cell.average)}`}
-                      >
-                        {cell.average}
-                      </span>
+                      <HeatmapScore average={cell.average} responses={cell.responses} />
                     ) : (
-                      <span className="block rounded-md bg-secondary/50 px-2 py-3 text-muted-foreground">—</span>
+                      <span className="block min-w-24 rounded-md bg-secondary/50 px-2 py-4 text-muted-foreground">—</span>
                     )}
                   </td>
                 );
               })}
+              <td className="border-l border-border p-0.5 pl-2 text-center">
+                <HeatmapScore
+                  average={teacher.total.average}
+                  responses={teacher.total.responses}
+                  emphasized
+                />
+              </td>
             </tr>
           ))}
         </tbody>

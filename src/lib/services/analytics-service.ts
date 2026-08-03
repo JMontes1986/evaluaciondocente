@@ -39,6 +39,7 @@ export interface HeatmapDatum {
   teacherId: string;
   teacher: string;
   grades: Record<string, { average: number; responses: number }>;
+  total: { average: number; responses: number };
 }
 
 interface EvaluationRow {
@@ -257,7 +258,12 @@ export async function getDashboardData(filters: DashboardFilters = {}) {
         cells[grade.id] = { average: average(score.sum, score.count), responses };
       }
     }
-    return { teacherId: teacher.id, teacher: teacher.name, grades: cells };
+    return {
+      teacherId: teacher.id,
+      teacher: teacher.name,
+      grades: cells,
+      total: { average: teacher.average, responses: teacher.responses }
+    };
   });
 
   const sortedQuestions = [...questionAverages].sort((a, b) => b.average - a.average);

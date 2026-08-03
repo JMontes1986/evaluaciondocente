@@ -187,7 +187,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
 
       <ChartSection
         title="Mapa de desempeño por docente y grado"
-        description="Los colores permiten localizar rápidamente combinaciones con resultados altos o bajos."
+        description="Cada celda muestra el promedio sobre 4 y su porcentaje. El total consolida todos los grupos evaluados por docente."
         className="mt-6"
       >
         <TeacherGradeHeatmap data={data.heatmap} grades={data.grades} />
