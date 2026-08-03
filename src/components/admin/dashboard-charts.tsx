@@ -98,27 +98,39 @@ export function QuestionAverageChart({ data }: { data: QuestionDatum[] }) {
 }
 
 export function ScoreDistributionChart({
-  data
+  data,
+  valueMode = "count"
 }: {
   data: { name: string; score: number; count: number }[];
+  valueMode?: "count" | "percentage";
 }) {
-  if (!data.some((item) => item.count)) return <EmptyChart />;
+  const total = data.reduce((sum, item) => sum + item.count, 0);
+  if (!total) return <EmptyChart />;
+  const chartData = data.map((item) => ({
+    ...item,
+    percentage: (item.count / total) * 100
+  }));
+  const dataKey = valueMode === "percentage" ? "percentage" : "count";
 
   return (
-    <div className="h-80 w-full" aria-label="Distribución de respuestas">
+    <div className="h-80 w-full" aria-label={"Distribuci\u00f3n de respuestas"}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
-            data={data}
-            dataKey="count"
+            data={chartData}
+            dataKey={dataKey}
             nameKey="name"
             innerRadius={62}
             outerRadius={105}
             paddingAngle={2}
           >
-            {data.map((item, index) => <Cell key={item.score} fill={pieColors[index]} />)}
+            {chartData.map((item, index) => <Cell key={item.score} fill={pieColors[index]} />)}
           </Pie>
-          <Tooltip formatter={(value) => [value, "Respuestas"]} />
+          <Tooltip
+            formatter={(value) => valueMode === "percentage"
+              ? [`${Number(value).toLocaleString("es-CO", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`, "Porcentaje"]
+              : [value, "Respuestas"]}
+          />
           <Legend />
         </PieChart>
       </ResponsiveContainer>

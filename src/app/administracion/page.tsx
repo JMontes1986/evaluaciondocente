@@ -167,7 +167,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           title="Distribución de respuestas"
           description="Proporción total entre Nunca, Algunas Veces, Casi Siempre y Siempre."
         >
-          <ScoreDistributionChart data={data.distribution} />
+          <ScoreDistributionChart data={data.distribution} valueMode="percentage" />
         </ChartSection>
         <ChartSection
           title="Dispersión docente–grado"
