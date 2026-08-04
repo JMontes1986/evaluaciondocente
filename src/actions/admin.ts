@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireModule } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { writeAuditLog } from "@/lib/services/audit-service";
 import {
   questionSchema,
   reassignTeacherAssignmentsSchema,
@@ -16,12 +17,7 @@ import {
 } from "@/lib/validation/schemas";
 
 async function audit(userId: string, action: string, entity: string, entityId?: string) {
-  await createAdminClient().from("audit_logs").insert({
-    user_id: userId,
-    action,
-    entity,
-    entity_id: entityId ?? null
-  });
+  await writeAuditLog({ actorId: userId, action, entity, entityId, category: "data_change" });
 }
 
 export async function createTeacherAction(formData: FormData) {

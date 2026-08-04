@@ -14,6 +14,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   ListChecks,
+  ScrollText,
   Settings,
   UserCog,
   UsersRound
@@ -36,6 +37,7 @@ const items = [
   ["/administracion/informes", "Informes", FileText, "informes"],
   ["/administracion/importaciones", "Importaciones", FileSpreadsheet, "importaciones"],
   ["/administracion/usuarios", "Usuarios", UserCog, "super_admin"],
+  ["/administracion/logs", "Logs", ScrollText, "super_admin"],
   ["/administracion/configuracion", "Configuración", Settings, "super_admin"]
 ] as const;
 

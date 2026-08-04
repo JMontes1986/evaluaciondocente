@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { ADMIN_MODULE_KEYS, firstModulePath, type AdminModuleKey } from "@/lib/auth/modules";
 import { createClient } from "@/lib/supabase/server";
+import { writeAuditLog } from "@/lib/services/audit-service";
 import { loginSchema } from "@/lib/validation/schemas";
 import type { AppRole } from "@/types/database.types";
 
@@ -13,11 +14,17 @@ const restrictedRoles: AppRole[] = ["RECTOR", "DIRECTIVO", "COORDINADOR", "DOCEN
 
 export async function loginAction(_state: FormState, formData: FormData): Promise<FormState> {
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
-  if (!parsed.success) return { error: "Revisa el correo y la contraseña." };
+  if (!parsed.success) {
+    await writeAuditLog({ action: "ADMIN_LOGIN_FAILURE", entity: "auth", category: "authentication", status: "failure", metadata: { reason: "invalid_input" } });
+    return { error: "Revisa el correo y la contraseña." };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error || !data.user) return { error: "No fue posible iniciar sesión con esas credenciales." };
+  if (error || !data.user) {
+    await writeAuditLog({ action: "ADMIN_LOGIN_FAILURE", entity: "auth", category: "authentication", status: "failure", metadata: { reason: "invalid_credentials" } });
+    return { error: "No fue posible iniciar sesión con esas credenciales." };
+  }
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -25,6 +32,7 @@ export async function loginAction(_state: FormState, formData: FormData): Promis
     .eq("id", data.user.id)
     .maybeSingle();
   if (!profile?.active || (!fullAccessRoles.includes(profile.role) && !restrictedRoles.includes(profile.role))) {
+    await writeAuditLog({ actorId: data.user.id, action: "ADMIN_LOGIN_FAILURE", entity: "auth", category: "authentication", status: "failure", metadata: { reason: "unauthorized_profile" } });
     await supabase.auth.signOut();
     return { error: "La cuenta no tiene acceso administrativo activo." };
   }
@@ -40,15 +48,20 @@ export async function loginAction(_state: FormState, formData: FormData): Promis
       .filter((module): module is AdminModuleKey => ADMIN_MODULE_KEYS.includes(module as AdminModuleKey));
   }
   if (!modules.length) {
+    await writeAuditLog({ actorId: data.user.id, action: "ADMIN_LOGIN_FAILURE", entity: "auth", category: "authentication", status: "failure", metadata: { reason: "no_authorized_modules", role: profile.role } });
     await supabase.auth.signOut();
     return { error: "La cuenta no tiene módulos autorizados." };
   }
+
+  await writeAuditLog({ actorId: data.user.id, action: "ADMIN_LOGIN_SUCCESS", entity: "auth", category: "authentication", metadata: { role: profile.role, modules } });
 
   redirect(firstModulePath(modules));
 }
 
 export async function logoutAction() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) await writeAuditLog({ actorId: user.id, action: "ADMIN_LOGOUT", entity: "auth", category: "authentication" });
   await supabase.auth.signOut();
   redirect("/login");
 }
@@ -60,5 +73,6 @@ export async function requestPasswordResetAction(_state: FormState, formData: Fo
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data, { redirectTo: `${appUrl}/actualizar-contrasena` });
+  await writeAuditLog({ action: "ADMIN_PASSWORD_RESET_REQUEST", entity: "auth", category: "security", metadata: { requested: true } });
   return { success: "Si el correo está registrado, recibirá instrucciones para continuar." };
 }

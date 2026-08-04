@@ -32,7 +32,7 @@ export function firstModulePath(modules: AdminModuleKey[]) {
 export function moduleForPathname(pathname: string): AdminModuleKey | "super_admin" | null {
   if (pathname === "/administracion") return "dashboard";
   if (pathname.startsWith("/administracion/sin-acceso")) return null;
-  if (pathname.startsWith("/administracion/usuarios") || pathname.startsWith("/administracion/configuracion")) {
+  if (pathname.startsWith("/administracion/usuarios") || pathname.startsWith("/administracion/configuracion") || pathname.startsWith("/administracion/logs")) {
     return "super_admin";
   }
   if (pathname.startsWith("/administracion/seguimiento-estudiantes")) return "seguimiento";
