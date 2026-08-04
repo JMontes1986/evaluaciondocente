@@ -17,4 +17,3 @@ class MemoryRateLimiter implements RateLimiter {
 export const studentNetworkLoginRateLimiter:RateLimiter=new MemoryRateLimiter(2000,15*60*1000);
 export const studentCodeLoginRateLimiter:RateLimiter=new MemoryRateLimiter(8,15*60*1000);
 export const adminAiRateLimiter:RateLimiter=new MemoryRateLimiter(5,10*60*1000);
-export const commentModerationRateLimiter:RateLimiter=new MemoryRateLimiter(60,10*60*1000);

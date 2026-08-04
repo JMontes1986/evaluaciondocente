@@ -3,13 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { serverActions: { bodySizeLimit: "8mb" } },
-  images: {
-    remotePatterns: [{
-      protocol: "https",
-      hostname: "aguevkykpwehckhiqbpe.supabase.co",
-      pathname: "/storage/v1/object/public/MollyIA/**"
-    }]
-  },
   async headers() {
     return [{
       source: "/(.*)",

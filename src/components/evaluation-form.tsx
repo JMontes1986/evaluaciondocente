@@ -1,9 +1,8 @@
 "use client";
 import { useActionState, useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import * as RadioGroup from "@radix-ui/react-radio-group";
-import { AlertCircle, CheckCircle2, LoaderCircle, Send, ShieldCheck } from "lucide-react";
+import { AlertCircle, CheckCircle2, Send } from "lucide-react";
 import { submitEvaluationAction } from "@/actions/evaluation";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -11,9 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 interface Question { id: string; text: string; category: string | null; order_number: number }
-type ModerationStatus = "idle" | "checking" | "allowed" | "blocked";
-
-const mollyImageUrl = "https://aguevkykpwehckhiqbpe.supabase.co/storage/v1/object/public/MollyIA/Molly%20IA%20advertencia.webp";
 
 const options = [
   { score: 4, label: "Siempre" }, { score: 3, label: "Casi Siempre" },
@@ -25,8 +21,6 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
   const [state, action, pending] = useActionState(submitEvaluationAction, {});
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [feedback, setFeedback] = useState("");
-  const [moderationStatus, setModerationStatus] = useState<ModerationStatus>("idle");
-  const [moderationMessage, setModerationMessage] = useState("");
   const answered = Object.keys(answers).length;
   const progress = questions.length ? (answered / questions.length) * 100 : 0;
   const payload = useMemo(() => questions.filter((q) => answers[q.id]).map((q) => ({ questionId: q.id, score: answers[q.id] })), [answers, questions]);
@@ -36,48 +30,6 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
     const timer = window.setTimeout(() => router.push("/evaluacion?success=1"), 1300);
     return () => window.clearTimeout(timer);
   }, [state.success, router]);
-
-  useEffect(() => {
-    const comment = feedback.trim();
-    if (!comment) return;
-
-    const controller = new AbortController();
-    const timer = window.setTimeout(async () => {
-      try {
-        const response = await fetch("/api/ai/moderate-comment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ comment }),
-          signal: controller.signal
-        });
-        const result = await response.json() as {
-          allowed?: boolean;
-          warning?: string | null;
-          error?: string;
-        };
-        if (!response.ok || typeof result.allowed !== "boolean") {
-          setModerationStatus("blocked");
-          setModerationMessage(result.error ?? "Molly IA no pudo revisar el comentario. Elimínalo o intenta nuevamente.");
-          return;
-        }
-        setModerationStatus(result.allowed ? "allowed" : "blocked");
-        setModerationMessage(
-          result.allowed
-            ? "Molly IA revisó el comentario: puedes enviar la evaluación."
-            : result.warning ?? "Molly IA detectó lenguaje inapropiado. Modifícalo para continuar."
-        );
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setModerationStatus("blocked");
-        setModerationMessage("Molly IA no pudo revisar el comentario. Elimínalo o intenta nuevamente.");
-      }
-    }, 650);
-
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [feedback]);
 
   if (state.success) return <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-8 text-center text-emerald-900">
     <CheckCircle2 className="mx-auto size-10" /><h2 className="mt-4 text-xl font-semibold">¡Gracias por tu participación!</h2><p className="mt-2 text-sm">Tu evaluación fue guardada correctamente.</p>
@@ -126,57 +78,16 @@ export function EvaluationForm({ questions, teacherId, assignmentId, periodId, a
         name="feedback"
         maxLength={2000}
         value={feedback}
-        aria-describedby={moderationStatus !== "idle" ? "feedback-moderation" : undefined}
-        aria-invalid={moderationStatus === "blocked"}
-        onChange={(event) => {
-          const value = event.target.value;
-          setFeedback(value);
-          setModerationStatus(value.trim() ? "checking" : "idle");
-          setModerationMessage(value.trim() ? "Molly IA está revisando que el comentario sea apropiado…" : "");
-        }}
+        onChange={(event) => setFeedback(event.target.value)}
         placeholder="¿Deseas compartir alguna observación que ayude a mejorar la experiencia de aprendizaje?"
       />
-      {(moderationStatus === "checking" || moderationStatus === "allowed") && <div
-        id="feedback-moderation"
-        role="status"
-        aria-live="polite"
-        className={cn(
-          "flex min-h-5 items-center gap-2 text-sm",
-          moderationStatus === "allowed" ? "text-emerald-700" : "text-muted-foreground"
-        )}
-      >
-        {moderationStatus === "checking"
-          ? <LoaderCircle className="size-4 shrink-0 animate-spin" />
-          : <ShieldCheck className="size-4 shrink-0" />}
-        {moderationMessage}
-      </div>}
-      {moderationStatus === "blocked" && <div
-        id="feedback-moderation"
-        role="alert"
-        aria-live="assertive"
-        className="fixed inset-x-4 bottom-5 z-50 mx-auto flex max-w-lg items-center gap-4 rounded-2xl border border-destructive/30 bg-background p-4 text-sm text-destructive shadow-2xl sm:inset-x-auto sm:right-6 sm:mx-0"
-      >
-        <Image
-          src={mollyImageUrl}
-          alt="Molly IA"
-          width={72}
-          height={72}
-          sizes="72px"
-          className="size-16 shrink-0 rounded-full object-cover ring-2 ring-destructive/20"
-        />
-        <div>
-          <p className="font-bold">Advertencia de Molly IA</p>
-          <p className="mt-1 leading-relaxed">{moderationMessage}</p>
-          <p className="mt-2 text-xs text-muted-foreground">Corrige o elimina el comentario para cerrar esta advertencia.</p>
-        </div>
-      </div>}
       <p className="text-right text-xs text-muted-foreground">{feedback.length}/2000</p>
     </div>}
     {state.error && <p role="alert" className="flex gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-4 text-sm text-destructive"><AlertCircle className="mt-0.5 size-4 shrink-0" />{state.error}</p>}
     <Button
       type="submit"
       size="lg"
-      disabled={answered !== questions.length || pending || moderationStatus === "checking" || moderationStatus === "blocked"}
+      disabled={answered !== questions.length || pending}
       className="w-full sm:w-auto"
     >
       <Send className="size-4" /> {pending ? "Enviando…" : "Enviar evaluación"}
