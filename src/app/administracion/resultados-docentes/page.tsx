@@ -145,9 +145,9 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
             </ChartSection>
             <ChartSection
               title="Distribución general"
-              description="Consolidado de todas las respuestas del docente."
+              description="Porcentaje consolidado de todas las respuestas del docente."
             >
-              <ScoreDistributionChart data={data.distribution} />
+              <ScoreDistributionChart data={data.distribution} valueMode="percentage" />
             </ChartSection>
           </div>
 
