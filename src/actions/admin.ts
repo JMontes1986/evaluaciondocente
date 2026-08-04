@@ -6,6 +6,7 @@ import { requireModule } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   questionSchema,
+  reassignTeacherAssignmentsSchema,
   semesterEvaluationSchema,
   studentSchema,
   subjectSchema,
@@ -86,6 +87,77 @@ export async function createTeacherAssignmentAction(formData: FormData) {
   await audit(adminUser.id, "ADMIN_BULK_UPSERT_TEACHER_ASSIGNMENTS", "teacher_assignments", data?.[0]?.id);
   revalidatePath("/administracion/asignaciones");
   revalidatePath("/evaluacion");
+}
+
+export async function reassignTeacherAssignmentsAction(formData: FormData) {
+  const adminUser = await requireModule("asignaciones");
+  const parsed = reassignTeacherAssignmentsSchema.safeParse({
+    currentTeacherId: formData.get("currentTeacherId"),
+    newTeacherId: formData.get("newTeacherId"),
+    subjectId: formData.get("subjectId"),
+    gradeIds: formData.getAll("gradeIds"),
+    academicYearId: formData.get("academicYearId")
+  });
+  if (!parsed.success) redirect("/administracion/asignaciones?reasignacion=datos-invalidos");
+
+  const admin = createAdminClient();
+  const { data: newTeacher } = await admin
+    .from("teachers")
+    .select("id")
+    .eq("id", parsed.data.newTeacherId)
+    .eq("active", true)
+    .maybeSingle();
+  if (!newTeacher) redirect("/administracion/asignaciones?reasignacion=datos-invalidos");
+
+  const { data: sourceAssignments, error: sourceError } = await admin
+    .from("teacher_assignments")
+    .select("id,grade_id")
+    .eq("teacher_id", parsed.data.currentTeacherId)
+    .eq("subject_id", parsed.data.subjectId)
+    .eq("academic_year_id", parsed.data.academicYearId)
+    .eq("active", true)
+    .in("grade_id", parsed.data.gradeIds);
+
+  if (sourceError || !sourceAssignments?.length) {
+    redirect("/administracion/asignaciones?reasignacion=sin-coincidencias");
+  }
+
+  const targetRecords = sourceAssignments.map((assignment) => ({
+    teacher_id: parsed.data.newTeacherId,
+    subject_id: parsed.data.subjectId,
+    grade_id: assignment.grade_id,
+    academic_year_id: parsed.data.academicYearId,
+    active: true
+  }));
+  const { error: targetError } = await admin
+    .from("teacher_assignments")
+    .upsert(targetRecords, { onConflict: "teacher_id,grade_id,subject_id,academic_year_id" });
+  if (targetError) redirect("/administracion/asignaciones?reasignacion=error");
+
+  const sourceIds = sourceAssignments.map((assignment) => assignment.id);
+  const { error: deactivateError } = await admin
+    .from("teacher_assignments")
+    .update({ active: false })
+    .in("id", sourceIds);
+  if (deactivateError) redirect("/administracion/asignaciones?reasignacion=error");
+
+  await admin.from("audit_logs").insert({
+    user_id: adminUser.id,
+    action: "ADMIN_REASSIGN_TEACHER_ASSIGNMENTS",
+    entity: "teacher_assignments",
+    entity_id: sourceIds[0],
+    metadata: {
+      previous_teacher_id: parsed.data.currentTeacherId,
+      new_teacher_id: parsed.data.newTeacherId,
+      subject_id: parsed.data.subjectId,
+      academic_year_id: parsed.data.academicYearId,
+      grade_ids: sourceAssignments.map((assignment) => assignment.grade_id),
+      previous_assignment_ids: sourceIds
+    }
+  });
+  revalidatePath("/administracion/asignaciones");
+  revalidatePath("/evaluacion");
+  redirect(`/administracion/asignaciones?reasignacion=ok&cantidad=${sourceIds.length}`);
 }
 
 export async function createSubjectAction(formData: FormData) {

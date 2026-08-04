@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { BookOpen, GraduationCap, UsersRound } from "lucide-react";
-import { createTeacherAssignmentAction } from "@/actions/admin";
+import { ArrowRightLeft, BookOpen, GraduationCap, UsersRound } from "lucide-react";
+import { createTeacherAssignmentAction, reassignTeacherAssignmentsAction } from "@/actions/admin";
 import { PageHeading } from "@/components/admin/page-heading";
 import { StatusButton } from "@/components/admin/status-button";
 import { Badge } from "@/components/ui/badge";
@@ -8,16 +8,17 @@ import { Button } from "@/components/ui/button";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 interface AssignmentsPageProps {
-  searchParams: Promise<{ docente?: string; grado?: string }>;
+  searchParams: Promise<{ docente?: string; grado?: string; editar?: string; reasignacion?: string; cantidad?: string }>;
 }
 
 export default async function AssignmentsPage({ searchParams }: AssignmentsPageProps) {
-  const { docente, grado } = await searchParams;
+  const { docente, grado, editar, reasignacion, cantidad } = await searchParams;
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const teacherId = uuidPattern.test(docente ?? "")
     ? docente ?? ""
     : "";
   const selectedGradeId = uuidPattern.test(grado ?? "") ? grado ?? "" : "";
+  const editAssignmentId = uuidPattern.test(editar ?? "") ? editar ?? "" : "";
   const admin = createAdminClient();
   let assignmentsQuery = admin
     .from("teacher_assignments")
@@ -44,6 +45,7 @@ export default async function AssignmentsPage({ searchParams }: AssignmentsPageP
   const gradeMap = map(grades, (grade) => grade.name);
   const subjectMap = map(subjects, (subject) => subject.name);
   const yearMap = map(years, (year) => year.name);
+  const editAssignment = (rows ?? []).find((assignment) => assignment.id === editAssignmentId) ?? null;
   const activeTeacherIds = new Set((teachers ?? []).filter((teacher) => teacher.active).map((teacher) => teacher.id));
   const activeSubjectIds = new Set((subjects ?? []).filter((subject) => subject.active).map((subject) => subject.id));
   const activeGradeIds = new Set((grades ?? []).filter((grade) => grade.active).map((grade) => grade.id));
@@ -127,6 +129,80 @@ export default async function AssignmentsPage({ searchParams }: AssignmentsPageP
           Guardar asignaciones
         </Button>
       </form>
+
+      {reasignacion && (
+        <p
+          role={reasignacion === "ok" ? "status" : "alert"}
+          className={`mb-5 rounded-xl border p-4 text-sm ${
+            reasignacion === "ok"
+              ? "border-emerald-700/20 bg-emerald-700/5 text-emerald-800"
+              : "border-destructive/25 bg-destructive/5 text-destructive"
+          }`}
+        >
+          {reasignacion === "ok"
+            ? `Se reasignaron correctamente ${cantidad ?? "las"} asignaciones al nuevo docente.`
+            : reasignacion === "sin-coincidencias"
+              ? "No se encontraron asignaciones activas que coincidan con el docente, asignatura, año y grupos seleccionados."
+              : reasignacion === "datos-invalidos"
+                ? "Revisa los datos: selecciona docentes diferentes y al menos un grupo."
+                : "No fue posible completar la reasignación. Inténtalo nuevamente."}
+        </p>
+      )}
+
+      <details id="reasignar" open={Boolean(editAssignment)} className="mb-7 scroll-mt-6 overflow-hidden rounded-xl border bg-card">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:p-6">
+          <div>
+            <h2 className="flex items-center gap-2 font-semibold"><ArrowRightLeft className="size-5 text-primary" />Reasignar grupos a otro docente</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Cambia el docente de una asignatura en uno o varios grupos, conservando el historial anterior.</p>
+          </div>
+          <Badge>Editar asignación</Badge>
+        </summary>
+        <form action={reassignTeacherAssignmentsAction} className="grid gap-4 border-t bg-secondary/20 p-5 md:grid-cols-2 xl:grid-cols-4 sm:p-6">
+          <div>
+            <label htmlFor="reassign-current-teacher" className="mb-2 block text-sm font-semibold">Docente actual</label>
+            <select id="reassign-current-teacher" name="currentTeacherId" required defaultValue={editAssignment?.teacher_id ?? ""} className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm">
+              <option value="">Selecciona el docente actual</option>
+              {teachers?.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.full_name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="reassign-new-teacher" className="mb-2 block text-sm font-semibold">Nuevo docente</label>
+            <select id="reassign-new-teacher" name="newTeacherId" required className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm">
+              <option value="">Selecciona el nuevo docente</option>
+              {teachers?.filter((teacher) => teacher.active).map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.full_name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="reassign-subject" className="mb-2 block text-sm font-semibold">Asignatura</label>
+            <select id="reassign-subject" name="subjectId" required defaultValue={editAssignment?.subject_id ?? ""} className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm">
+              <option value="">Selecciona la asignatura</option>
+              {subjects?.filter((subject) => subject.active).map((subject) => <option key={subject.id} value={subject.id}>{subject.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="reassign-year" className="mb-2 block text-sm font-semibold">Año académico</label>
+            <select id="reassign-year" name="academicYearId" required defaultValue={editAssignment?.academic_year_id ?? ""} className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm">
+              <option value="">Selecciona el año</option>
+              {years?.map((year) => <option key={year.id} value={year.id}>{year.name}</option>)}
+            </select>
+          </div>
+          <fieldset className="rounded-xl border bg-background p-4 md:col-span-2 xl:col-span-4">
+            <legend className="px-2 text-sm font-semibold">Grupo o grupos que cambiarán de docente</legend>
+            <p className="mb-3 text-xs text-muted-foreground">Solo se modificarán las coincidencias activas de los grupos seleccionados.</p>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+              {grades?.filter((grade) => grade.active).map((grade) => (
+                <label key={grade.id} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 text-sm font-medium hover:bg-secondary">
+                  <input name="gradeIds" type="checkbox" value={grade.id} defaultChecked={editAssignment?.grade_id === grade.id} className="size-4 accent-primary" />
+                  {grade.name}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div className="md:col-span-2 xl:col-span-4 xl:justify-self-end">
+            <Button type="submit"><ArrowRightLeft className="size-4" />Asignar al nuevo docente</Button>
+          </div>
+        </form>
+      </details>
 
       <section className="mb-5 rounded-xl border bg-card p-5">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
@@ -264,7 +340,12 @@ export default async function AssignmentsPage({ searchParams }: AssignmentsPageP
                 <td className="p-4">{yearMap.get(assignment.academic_year_id) ?? "Año no disponible"}</td>
                 <td className="p-4"><Badge>{assignment.active ? "Activa" : "Inactiva"}</Badge></td>
                 <td className="p-4">
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-1">
+                    {assignment.active && (
+                      <Button asChild type="button" variant="ghost" size="sm">
+                        <Link href={`/administracion/asignaciones?editar=${assignment.id}#reasignar`}>Editar</Link>
+                      </Button>
+                    )}
                     <StatusButton table="teacher_assignments" id={assignment.id} active={assignment.active} />
                   </div>
                 </td>

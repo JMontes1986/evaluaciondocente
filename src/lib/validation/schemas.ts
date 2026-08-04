@@ -19,6 +19,16 @@ export const teacherAssignmentSchema = z.object({
   gradeIds: z.array(z.uuid()).min(1).max(20),
   academicYearId: z.uuid()
 });
+export const reassignTeacherAssignmentsSchema = z.object({
+  currentTeacherId: z.uuid(),
+  newTeacherId: z.uuid(),
+  subjectId: z.uuid(),
+  gradeIds: z.array(z.uuid()).min(1).max(20),
+  academicYearId: z.uuid()
+}).refine((value) => value.currentTeacherId !== value.newTeacherId, {
+  message: "El nuevo docente debe ser diferente al actual.",
+  path: ["newTeacherId"]
+});
 export const subjectSchema = z.object({
   name: z.string().trim().min(2).max(120)
 });
