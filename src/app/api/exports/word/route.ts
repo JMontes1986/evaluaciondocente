@@ -1,11 +1,11 @@
 import { Document, HeadingLevel, Packer, Paragraph, Table, TableCell, TableRow, TextRun, WidthType } from "docx";
 import { NextRequest } from "next/server";
-import { requireAdmin } from "@/lib/auth/permissions";
+import { requireModule } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPeriodSummary } from "@/lib/services/report-service";
 
 export async function GET(request:NextRequest){
-  const user=await requireAdmin(),periodId=request.nextUrl.searchParams.get("period");if(!periodId)return new Response("Evaluación semestral requerida",{status:400});
+  const user=await requireModule("informes"),periodId=request.nextUrl.searchParams.get("period");if(!periodId)return new Response("Evaluación semestral requerida",{status:400});
   const summary=await getPeriodSummary(periodId);
   const table=new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
     new TableRow({children:["Docente","Promedio","Evaluaciones"].map(text=>new TableCell({children:[new Paragraph({children:[new TextRun({text,bold:true})]})]}))}),
