@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { QuestionAverageChart, ScoreDistributionChart } from "@/components/admin/dashboard-charts";
 import { PageHeading } from "@/components/admin/page-heading";
 import { QuestionDistributionChart } from "@/components/admin/teacher-results-charts";
@@ -40,6 +41,13 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
         title="Resultados por docente"
         description="Revisa el desempeño pregunta por pregunta y los comentarios anónimos sin exponer la identidad de los estudiantes."
       >
+        {report?.available && data.teacher && data.period ? (
+          <Button asChild>
+            <Link href={`/api/exports/teacher-word?teacher=${data.teacher.id}&period=${data.period.id}`}>
+              <Download className="size-4" /> Descargar formato Word
+            </Link>
+          </Button>
+        ) : null}
         <Button asChild variant="outline">
           <Link href="/administracion/docentes">Volver a docentes</Link>
         </Button>
