@@ -192,7 +192,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
 
       <ChartSection
         title="Resultado de todas las preguntas"
-        description="Rojo indica prioridad, amarillo seguimiento y verde fortaleza. Pasa el cursor para leer la pregunta completa."
+        description="El porcentaje aparece en cada barra. Rojo indica prioridad, amarillo seguimiento y verde fortaleza; pasa el cursor para leer la pregunta completa."
         className="mt-6"
       >
         <QuestionAverageChart data={data.questionAverages} />

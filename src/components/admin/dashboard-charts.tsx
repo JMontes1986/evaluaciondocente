@@ -134,6 +134,14 @@ export function QuestionAverageChart({ data }: { data: QuestionDatum[] }) {
                 fill={item.average < 2.5 ? "#b42318" : item.average < 3.2 ? "#e7892b" : "#087a63"}
               />
             ))}
+            <LabelList
+              dataKey="percentage"
+              position="insideRight"
+              fill="#ffffff"
+              fontSize={11}
+              fontWeight={700}
+              formatter={(value) => formatChartPercentage(Number(value))}
+            />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
