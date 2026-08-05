@@ -8,6 +8,7 @@ import {
   LabelList,
   Legend,
   Pie,
+  type PieLabelRenderProps,
   PieChart,
   ResponsiveContainer,
   Scatter,
@@ -32,6 +33,31 @@ function formatChartPercentage(value: number) {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1
   })} %`;
+}
+
+function renderPercentagePieLabel({
+  cx,
+  cy,
+  midAngle,
+  outerRadius,
+  value
+}: PieLabelRenderProps) {
+  const radius = Number(outerRadius) + 16;
+  const radians = (-Number(midAngle) * Math.PI) / 180;
+  const x = Number(cx) + radius * Math.cos(radians);
+  const y = Number(cy) + radius * Math.sin(radians);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      className="fill-foreground text-[11px] font-bold"
+      textAnchor={x > Number(cx) ? "start" : "end"}
+      dominantBaseline="central"
+    >
+      {formatChartPercentage(Number(value))}
+    </text>
+  );
 }
 
 function EmptyChart() {
@@ -173,8 +199,10 @@ export function ScoreDistributionChart({
             dataKey={dataKey}
             nameKey="name"
             innerRadius={62}
-            outerRadius={105}
+            outerRadius={94}
             paddingAngle={2}
+            label={valueMode === "percentage" ? renderPercentagePieLabel : false}
+            labelLine={valueMode === "percentage"}
           >
             {chartData.map((item, index) => <Cell key={item.score} fill={pieColors[index]} />)}
           </Pie>
