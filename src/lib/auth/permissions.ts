@@ -1,6 +1,7 @@
 import "server-only";
 
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { ADMIN_MODULE_KEYS, type AdminModuleKey } from "@/lib/auth/modules";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/types/database.types";
@@ -16,7 +17,7 @@ export interface AdminIdentity {
   modules: AdminModuleKey[];
 }
 
-export async function requireAdmin(): Promise<AdminIdentity> {
+export const requireAdmin = cache(async (): Promise<AdminIdentity> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -49,7 +50,7 @@ export async function requireAdmin(): Promise<AdminIdentity> {
     role: profile.role,
     modules
   };
-}
+});
 
 export async function requireModule(module: AdminModuleKey) {
   const identity = await requireAdmin();

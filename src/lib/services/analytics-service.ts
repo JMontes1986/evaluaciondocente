@@ -78,24 +78,33 @@ async function fetchEvaluations(periodId: string, filters: DashboardFilters): Pr
 }
 
 async function fetchAnswers(evaluationIds: string[]): Promise<AnswerRow[]> {
-  const admin = createAdminClient();
-  const answers: AnswerRow[] = [];
-
+  const chunks: string[][] = [];
   for (let start = 0; start < evaluationIds.length; start += 100) {
-    const ids = evaluationIds.slice(start, start + 100);
-    for (let offset = 0; ; offset += 1000) {
-      const { data } = await admin
-        .from("evaluation_answers")
-        .select("evaluation_id,question_id,score")
-        .in("evaluation_id", ids)
-        .range(offset, offset + 999);
-      const page = data ?? [];
-      answers.push(...page);
-      if (page.length < 1000) break;
-    }
+    chunks.push(evaluationIds.slice(start, start + 100));
   }
 
-  return answers;
+  const pages: AnswerRow[][] = [];
+  const concurrency = 6;
+  for (let start = 0; start < chunks.length; start += concurrency) {
+    const batch = chunks.slice(start, start + concurrency);
+    pages.push(...await Promise.all(batch.map(async (ids) => {
+      const admin = createAdminClient();
+      const chunkAnswers: AnswerRow[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data } = await admin
+          .from("evaluation_answers")
+          .select("evaluation_id,question_id,score")
+          .in("evaluation_id", ids)
+          .range(offset, offset + 999);
+        const page = data ?? [];
+        chunkAnswers.push(...page);
+        if (page.length < 1000) break;
+      }
+      return chunkAnswers;
+    })));
+  }
+
+  return pages.flat();
 }
 
 function average(sum: number, count: number) {
