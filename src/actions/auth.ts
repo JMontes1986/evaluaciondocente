@@ -16,7 +16,7 @@ export async function loginAction(_state: FormState, formData: FormData): Promis
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) {
     await writeAuditLog({ action: "ADMIN_LOGIN_FAILURE", entity: "auth", category: "authentication", status: "failure", metadata: { reason: "invalid_input" } });
-    return { error: "Revisa el correo y la contraseña." };
+    return { error: parsed.error.issues[0]?.message ?? "Revisa el correo y la contraseña." };
   }
 
   const supabase = await createClient();

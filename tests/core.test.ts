@@ -7,7 +7,7 @@ import {
   formatScoreResult,
   scorePercentage
 } from "../src/lib/calculations/scores";
-import { evaluationSchema, studentCodeSchema } from "../src/lib/validation/schemas";
+import { evaluationSchema, institutionalEmailSchema, studentCodeSchema } from "../src/lib/validation/schemas";
 
 test("calcula promedio y porcentaje institucional", () => {
   assert.equal(average([4, 3, 4, 3.4]), 3.6);
@@ -23,6 +23,12 @@ test("rechaza puntajes fuera del rango", () => {
 
 test("rechaza códigos con caracteres inesperados", () => {
   assert.equal(studentCodeSchema.safeParse("5540 OR 1=1").success, false);
+});
+
+test("solo permite correos institucionales en el acceso administrativo", () => {
+  assert.equal(institutionalEmailSchema.safeParse("usuario@colgemelli.edu.co").success, true);
+  assert.equal(institutionalEmailSchema.safeParse("usuario@gmail.com").success, false);
+  assert.equal(institutionalEmailSchema.safeParse("usuario@colgemelli.edu.co.example.com").success, false);
 });
 
 test("exige respuestas con puntajes entre 1 y 4", () => {

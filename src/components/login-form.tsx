@@ -10,7 +10,16 @@ export function LoginForm() {
   return <form action={action} className="space-y-5">
     <div className="space-y-2">
       <label htmlFor="email" className="text-sm font-semibold">Correo electrónico</label>
-      <Input id="email" name="email" type="email" autoComplete="email" required placeholder="nombre@colgemelli.edu.co" />
+      <Input
+        id="email"
+        name="email"
+        type="email"
+        autoComplete="email"
+        required
+        placeholder="nombre@colgemelli.edu.co"
+        pattern="[^@\\s]+@colgemelli\\.edu\\.co"
+        title="Usa un correo del dominio @colgemelli.edu.co"
+      />
     </div>
     <div className="space-y-2">
       <label htmlFor="password" className="text-sm font-semibold">Contraseña</label>

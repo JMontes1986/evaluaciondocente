@@ -1,7 +1,15 @@
 import { z } from "zod";
 
 export const studentCodeSchema = z.string().trim().min(3).max(40).regex(/^[A-Za-z0-9-]+$/);
-export const loginSchema = z.object({ email: z.email(), password: z.string().min(8).max(128) });
+export const institutionalEmailSchema = z.string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email("Ingresa un correo institucional válido."))
+  .refine((email) => email.endsWith("@colgemelli.edu.co"), {
+    message: "Solo se permiten correos del dominio @colgemelli.edu.co."
+  });
+
+export const loginSchema = z.object({ email: institutionalEmailSchema, password: z.string().min(8).max(128) });
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(8).max(128),
   newPassword: z.string()
