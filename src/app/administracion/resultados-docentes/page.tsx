@@ -16,6 +16,16 @@ interface TeacherResultsPageProps {
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const percentageFormatter = new Intl.NumberFormat("es-CO", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1
+});
+
+function formatResponsePercentage(count: number, total: number) {
+  const percentage = total ? (count / total) * 100 : 0;
+  return `${percentageFormatter.format(percentage)} %`;
+}
+
 export default async function TeacherResultsPage({ searchParams }: TeacherResultsPageProps) {
   const params = await searchParams;
   const teacherId = uuidPattern.test(params.docente ?? "") ? params.docente : undefined;
@@ -161,7 +171,7 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
 
           <ChartSection
             title="Cómo respondieron en cada pregunta"
-            description="Cada barra muestra cuántas respuestas recibió cada opción de la escala institucional."
+            description="Cada barra representa el 100 % de las respuestas y muestra el porcentaje correspondiente a cada opción de la escala institucional."
             className="mt-6"
           >
             <QuestionDistributionChart data={report.questions} />
@@ -170,7 +180,10 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
           <section className="mt-6 overflow-hidden rounded-xl border bg-card">
             <div className="border-b p-5 sm:p-6">
               <h2 className="text-lg font-semibold">Detalle completo por pregunta</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Ordenado desde la pregunta con menor promedio hasta la mejor valorada.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Resultados expresados en porcentaje y ordenados de menor a mayor. La distribución
+                muestra qué proporción de respuestas recibió cada opción.
+              </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[940px] text-sm">
@@ -179,7 +192,7 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
                     <th className="p-4">Pregunta</th>
                     <th className="p-4">Criterio</th>
                     <th className="p-4">Categoría</th>
-                    <th className="p-4 text-center">Promedio</th>
+                    <th className="p-4 text-center">Resultado</th>
                     <th className="p-4 text-center">Nunca</th>
                     <th className="p-4 text-center">Algunas veces</th>
                     <th className="p-4 text-center">Casi siempre</th>
@@ -192,11 +205,11 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
                       <td className="p-4 font-mono font-bold">{question.label}</td>
                       <td className="max-w-xl p-4 leading-relaxed">{question.question}</td>
                       <td className="p-4 text-muted-foreground">{question.category ?? "General"}</td>
-                      <td className="p-4 text-center font-mono font-bold">{question.average.toFixed(2)}</td>
-                      <td className="p-4 text-center">{question.never}</td>
-                      <td className="p-4 text-center">{question.sometimes}</td>
-                      <td className="p-4 text-center">{question.almostAlways}</td>
-                      <td className="p-4 text-center">{question.always}</td>
+                      <td className="p-4 text-center font-mono font-bold">{formatScorePercentage(question.average)}</td>
+                      <td className="p-4 text-center">{formatResponsePercentage(question.never, question.responses)}</td>
+                      <td className="p-4 text-center">{formatResponsePercentage(question.sometimes, question.responses)}</td>
+                      <td className="p-4 text-center">{formatResponsePercentage(question.almostAlways, question.responses)}</td>
+                      <td className="p-4 text-center">{formatResponsePercentage(question.always, question.responses)}</td>
                     </tr>
                   ))}
                 </tbody>
