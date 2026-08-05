@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, RefreshCw, Sparkles, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { groqModelLabel } from "@/lib/ai/groq-models";
 
 interface AiDecisionAnalysisProps {
   configured: boolean;
@@ -10,6 +11,7 @@ interface AiDecisionAnalysisProps {
   periodId?: string;
   teacherId?: string;
   gradeId?: string;
+  model: string;
 }
 
 export function AiDecisionAnalysis({
@@ -17,11 +19,13 @@ export function AiDecisionAnalysis({
   canAnalyze,
   periodId,
   teacherId,
-  gradeId
+  gradeId,
+  model
 }: AiDecisionAnalysisProps) {
   const [analysis, setAnalysis] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activeModel, setActiveModel] = useState(model);
   const controllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
 
@@ -45,6 +49,7 @@ export function AiDecisionAnalysis({
       const payload = await response.json().catch(() => null) as {
         analysis?: string;
         error?: string;
+        model?: string;
       } | null;
       if (!response.ok) {
         throw new Error(payload?.error ?? "No fue posible generar el an\u00e1lisis.");
@@ -53,7 +58,10 @@ export function AiDecisionAnalysis({
       if (!generatedAnalysis) {
         throw new Error("Groq termin\u00f3 la solicitud sin devolver un an\u00e1lisis.");
       }
-      if (requestIdRef.current === requestId) setAnalysis(generatedAnalysis);
+      if (requestIdRef.current === requestId) {
+        setAnalysis(generatedAnalysis);
+        if (payload?.model) setActiveModel(payload.model);
+      }
     } catch (caught) {
       if (requestIdRef.current === requestId) {
         if (caught instanceof DOMException && caught.name === "AbortError") {
@@ -69,12 +77,6 @@ export function AiDecisionAnalysis({
       }
     }
   }, [gradeId, periodId, teacherId]);
-
-  useEffect(() => {
-    if (!configured || !canAnalyze) return;
-    const timer = window.setTimeout(() => void generateAnalysis(), 150);
-    return () => window.clearTimeout(timer);
-  }, [canAnalyze, configured, generateAnalysis]);
 
   useEffect(() => {
     return () => controllerRef.current?.abort();
@@ -93,7 +95,7 @@ export function AiDecisionAnalysis({
             )}
           </h2>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Qwen 3.6 27B interpreta exclusivamente los indicadores agregados visibles en este dashboard.
+            {groqModelLabel(activeModel)} interpreta exclusivamente los indicadores agregados visibles en este dashboard.
           </p>
         </div>
         {loading ? (

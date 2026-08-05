@@ -19,6 +19,7 @@ import { AiDecisionAnalysis } from "@/components/admin/ai-decision-analysis";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatScoreResult } from "@/lib/calculations/scores";
+import { DEFAULT_GROQ_MODEL } from "@/lib/ai/groq-models";
 import { getDashboardData } from "@/lib/services/analytics-service";
 
 export const metadata = { title: "Dashboard analítico" };
@@ -149,6 +150,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         periodId={data.period?.id}
         teacherId={teacherId}
         gradeId={gradeId}
+        model={process.env.GROQ_MODEL ?? DEFAULT_GROQ_MODEL}
       />
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">

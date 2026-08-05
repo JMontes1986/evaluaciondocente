@@ -6,6 +6,7 @@ import { UserAccessManager } from "@/components/admin/user-access-manager";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DEFAULT_GROQ_MODEL } from "@/lib/ai/groq-models";
 import { requireSuperAdmin } from "@/lib/auth/permissions";
 import { getSystemSettings } from "@/lib/services/system-settings-service";
 
@@ -21,7 +22,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     getRestrictedUsers()
   ]);
   const aiConfigured = Boolean(process.env.GROQ_API_KEY);
-  const aiModel = process.env.GROQ_MODEL ?? "qwen/qwen3.6-27b";
+  const aiModel = process.env.GROQ_MODEL ?? DEFAULT_GROQ_MODEL;
 
   return (
     <div className="mx-auto max-w-6xl">

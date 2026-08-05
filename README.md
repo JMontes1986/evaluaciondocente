@@ -54,7 +54,7 @@ npm run build
 
 ## Variables
 
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STUDENT_SESSION_SECRET`, `NEXT_PUBLIC_APP_URL`, `MIN_RESPONSES_FOR_REPORT` y, para el análisis asistido, `GROQ_API_KEY`. Opcionalmente usa `GROQ_MODEL`; su valor predeterminado es `qwen/qwen3.6-27b`.
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STUDENT_SESSION_SECRET`, `NEXT_PUBLIC_APP_URL`, `MIN_RESPONSES_FOR_REPORT` y, para el análisis asistido, `GROQ_API_KEY`. Opcionalmente usa `GROQ_MODEL`; su valor predeterminado estable es `llama-3.3-70b-versatile`.
 
 ## Mantenimiento
 
