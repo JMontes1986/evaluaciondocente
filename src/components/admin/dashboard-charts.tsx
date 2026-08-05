@@ -239,11 +239,11 @@ function HeatmapScore({
 
   return (
     <span
-      title={`${responses} evaluaciones · Promedio ${average} / 4 · ${percentage} %`}
+      title={`${responses} evaluaciones · ${percentage} % · Promedio ${average} / 4`}
       className={`block min-w-24 rounded-md px-2 py-2 font-mono ${heatColor(average)} ${emphasized ? "ring-1 ring-inset ring-current/20" : ""}`}
     >
-      <span className="block text-sm font-bold leading-none">{average}</span>
-      <span className="mt-1 block text-[10px] font-semibold leading-none opacity-75">{percentage} %</span>
+      <span className="block text-sm font-bold leading-none">{percentage} %</span>
+      <span className="mt-1 block text-[10px] font-semibold leading-none opacity-75">{average} / 4</span>
     </span>
   );
 }
