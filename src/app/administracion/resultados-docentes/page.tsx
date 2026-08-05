@@ -119,8 +119,8 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
                 <p className="mt-2 text-sm text-white/60">{data.teacher.email ?? "Sin correo institucional registrado"}</p>
               </div>
               <div className="md:text-right">
-                <p className="font-mono text-4xl font-semibold">{formatScore(report.average)} / 4</p>
-                <p className="mt-1 font-mono text-sm font-semibold text-white/70">{formatScorePercentage(report.average)}</p>
+                <p className="font-mono text-5xl font-semibold tracking-tight">{formatScorePercentage(report.average)}</p>
+                <p className="mt-2 font-mono text-base font-semibold text-white/70">{formatScore(report.average)} / 4</p>
                 <p className="mt-1 text-xs text-white/55">Promedio general</p>
               </div>
             </div>
