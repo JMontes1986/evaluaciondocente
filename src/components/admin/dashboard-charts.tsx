@@ -5,6 +5,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  LabelList,
   Legend,
   Pie,
   PieChart,
@@ -26,6 +27,13 @@ import type {
 
 const pieColors = ["#b42318", "#e7892b", "#4f78a8", "#087a63"];
 
+function formatChartPercentage(value: number) {
+  return `${value.toLocaleString("es-CO", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  })} %`;
+}
+
 function EmptyChart() {
   return (
     <div className="grid h-64 place-items-center rounded-lg border border-dashed text-sm text-muted-foreground">
@@ -43,13 +51,24 @@ export function AverageBarChart({
 }) {
   if (!data.length) return <EmptyChart />;
   const height = Math.max(280, data.length * 42);
+  const chartData = data.map((item) => ({
+    ...item,
+    percentage: scorePercentage(item.average)
+  }));
 
   return (
     <div style={{ height }} className="w-full" aria-label={ariaLabel}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ left: 12, right: 28 }}>
+        <BarChart data={chartData} layout="vertical" margin={{ left: 12, right: 28 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
-          <XAxis type="number" domain={[1, 4]} tick={{ fontSize: 11 }} tickLine={false} />
+          <XAxis
+            type="number"
+            domain={[0, 100]}
+            ticks={[0, 25, 50, 75, 100]}
+            tickFormatter={(value) => `${value}%`}
+            tick={{ fontSize: 11 }}
+            tickLine={false}
+          />
           <YAxis
             type="category"
             dataKey="name"
@@ -58,8 +77,19 @@ export function AverageBarChart({
             tickLine={false}
             axisLine={false}
           />
-          <Tooltip formatter={(value) => [`${value} / 4`, "Promedio"]} />
-          <Bar dataKey="average" name="Promedio" fill="var(--primary)" radius={[0, 6, 6, 0]} />
+          <Tooltip
+            formatter={(value) => [formatChartPercentage(Number(value)), "Promedio"]}
+          />
+          <Bar dataKey="percentage" name="Promedio" fill="var(--primary)" radius={[0, 6, 6, 0]}>
+            <LabelList
+              dataKey="percentage"
+              position="insideRight"
+              fill="#ffffff"
+              fontSize={11}
+              fontWeight={700}
+              formatter={(value) => formatChartPercentage(Number(value))}
+            />
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>
