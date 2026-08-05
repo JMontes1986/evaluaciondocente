@@ -10,6 +10,7 @@ import {
   Pie,
   type PieLabelRenderProps,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Scatter,
   ScatterChart,
@@ -18,6 +19,7 @@ import {
   YAxis,
   ZAxis
 } from "recharts";
+import type { TooltipContentProps } from "recharts";
 import { scorePercentage } from "@/lib/calculations/scores";
 import type {
   AverageDatum,
@@ -57,6 +59,35 @@ function renderPercentagePieLabel({
     >
       {formatChartPercentage(Number(value))}
     </text>
+  );
+}
+
+type PerformancePoint = ScatterDatum & {
+  percentage: number;
+  displayLabel: string;
+};
+
+function performanceColor(percentage: number) {
+  if (percentage < 62.5) return "#b42318";
+  if (percentage < 80) return "#e7892b";
+  return "#087a63";
+}
+
+function PerformanceTooltip({ active, payload }: TooltipContentProps) {
+  const point = payload?.[0]?.payload as PerformancePoint | undefined;
+  if (!active || !point) return null;
+
+  return (
+    <div className="max-w-72 rounded-lg border bg-card p-3 text-sm shadow-lg">
+      <p className="font-semibold text-foreground">{point.teacher}</p>
+      <p className="mt-0.5 text-xs text-muted-foreground">Grado {point.grade}</p>
+      <dl className="mt-3 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 border-t pt-3">
+        <dt className="text-muted-foreground">Resultado</dt>
+        <dd className="font-mono font-bold text-foreground">{formatChartPercentage(point.percentage)}</dd>
+        <dt className="text-muted-foreground">Evaluaciones</dt>
+        <dd className="font-mono font-bold text-foreground">{point.responses}</dd>
+      </dl>
+    </div>
   );
 }
 
@@ -221,33 +252,83 @@ export function ScoreDistributionChart({
 export function PerformanceScatterChart({ data }: { data: ScatterDatum[] }) {
   if (!data.length) return <EmptyChart />;
 
+  const percentages = data.map((item) => scorePercentage(item.average));
+  const minimum = Math.min(...percentages);
+  const maximum = Math.max(...percentages);
+  const pointAverage = percentages.reduce((sum, value) => sum + value, 0) / percentages.length;
+  const minimumIndex = percentages.indexOf(minimum);
+  const maximumIndex = percentages.indexOf(maximum);
+  const chartData: PerformancePoint[] = data.map((item, index) => {
+    const percentage = percentages[index];
+    return {
+      ...item,
+      percentage,
+      displayLabel: index === minimumIndex || index === maximumIndex
+        ? formatChartPercentage(percentage)
+        : ""
+    };
+  });
+
   return (
-    <div className="h-80 w-full" aria-label="Dispersión de desempeño por docente y grado">
-      <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" opacity={0.35} />
-          <XAxis
-            type="number"
-            dataKey="responses"
-            name="Evaluaciones"
-            allowDecimals={false}
-            tick={{ fontSize: 11 }}
-          />
-          <YAxis
-            type="number"
-            dataKey="average"
-            name="Promedio"
-            domain={[1, 4]}
-            tick={{ fontSize: 11 }}
-          />
-          <ZAxis type="number" dataKey="responses" range={[70, 350]} />
-          <Tooltip
-            cursor={{ strokeDasharray: "3 3" }}
-            formatter={(value, name) => [name === "Promedio" ? `${value} / 4` : value, name]}
-          />
-          <Scatter name="Docente y grado" data={data} fill="var(--primary)" />
-        </ScatterChart>
-      </ResponsiveContainer>
+    <div className="w-full" aria-label="Dispersión porcentual de desempeño por docente y grado">
+      <div className="mb-4 grid overflow-hidden rounded-lg border bg-secondary/20 sm:grid-cols-3 sm:divide-x">
+        <div className="border-b px-4 py-3 sm:border-b-0">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Resultado menor</p>
+          <p className="mt-1 font-mono text-lg font-bold text-foreground">{formatChartPercentage(minimum)}</p>
+        </div>
+        <div className="border-b px-4 py-3 sm:border-b-0">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Promedio entre cruces</p>
+          <p className="mt-1 font-mono text-lg font-bold text-foreground">{formatChartPercentage(pointAverage)}</p>
+        </div>
+        <div className="px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Resultado mayor</p>
+          <p className="mt-1 font-mono text-lg font-bold text-foreground">{formatChartPercentage(maximum)}</p>
+        </div>
+      </div>
+
+      <div className="mb-2 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#b42318]" />Prioridad: menos de 62,5 %</span>
+        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#e7892b]" />Seguimiento: 62,5–79,9 %</span>
+        <span className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-[#087a63]" />Fortaleza: 80 % o más</span>
+      </div>
+
+      <div className="h-[380px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart margin={{ left: 12, right: 24, top: 24, bottom: 22 }}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.35} />
+            <XAxis
+              type="number"
+              dataKey="responses"
+              name="Evaluaciones"
+              allowDecimals={false}
+              tick={{ fontSize: 11 }}
+              height={48}
+              label={{ value: "Evaluaciones recibidas", position: "insideBottom", offset: -8 }}
+            />
+            <YAxis
+              type="number"
+              dataKey="percentage"
+              name="Resultado"
+              domain={[25, 100]}
+              ticks={[25, 50, 75, 100]}
+              tickFormatter={(value) => `${value}%`}
+              tick={{ fontSize: 11 }}
+              width={62}
+              label={{ value: "Resultado (%)", angle: -90, position: "insideLeft" }}
+            />
+            <ZAxis type="number" dataKey="responses" range={[55, 220]} />
+            <ReferenceLine y={62.5} stroke="#b42318" strokeDasharray="4 4" opacity={0.55} />
+            <ReferenceLine y={80} stroke="#087a63" strokeDasharray="4 4" opacity={0.55} />
+            <Tooltip cursor={{ strokeDasharray: "3 3" }} content={PerformanceTooltip} />
+            <Scatter name="Docente y grado" data={chartData}>
+              {chartData.map((item, index) => (
+                <Cell key={`${item.name}-${index}`} fill={performanceColor(item.percentage)} />
+              ))}
+              <LabelList dataKey="displayLabel" position="top" fill="currentColor" fontSize={10} fontWeight={700} />
+            </Scatter>
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }

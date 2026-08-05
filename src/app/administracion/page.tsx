@@ -184,7 +184,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         </ChartSection>
         <ChartSection
           title="Dispersión docente–grado"
-          description="Eje horizontal: evaluaciones recibidas. Eje vertical: promedio. Cada punto representa un docente en un grado."
+          description="Cada punto combina un docente y un grado. El eje vertical muestra el resultado porcentual y el horizontal las evaluaciones recibidas; selecciona un punto para consultar su detalle."
         >
           <PerformanceScatterChart data={data.scatter} />
         </ChartSection>
