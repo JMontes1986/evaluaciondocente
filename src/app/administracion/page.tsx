@@ -18,7 +18,7 @@ import {
 import { AiDecisionAnalysis } from "@/components/admin/ai-decision-analysis";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatScoreResult } from "@/lib/calculations/scores";
+import { formatScorePercentage, formatScoreResult } from "@/lib/calculations/scores";
 import { DEFAULT_GROQ_MODEL } from "@/lib/ai/groq-models";
 import { getDashboardData } from "@/lib/services/analytics-service";
 
@@ -33,6 +33,16 @@ interface AdminDashboardPageProps {
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const percentageFormatter = new Intl.NumberFormat("es-CO", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1
+});
+
+function formatResponsePercentage(count: number, total: number) {
+  const percentage = total ? (count / total) * 100 : 0;
+  return `${percentageFormatter.format(percentage)} %`;
+}
 
 export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
   const params = await searchParams;
@@ -202,7 +212,10 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
             <BarChart3 className="size-5 text-primary" />
             Detalle para plan de mejoramiento
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Listado ordenado de la pregunta con menor resultado a la de mayor resultado.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Resultados expresados en porcentaje y ordenados de menor a mayor. La distribución indica
+            qué proporción de respuestas recibió cada opción.
+          </p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
@@ -210,7 +223,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
               <tr>
                 <th className="p-4">Pregunta</th>
                 <th className="p-4">Criterio</th>
-                <th className="p-4 text-center">Promedio</th>
+                <th className="p-4 text-center">Resultado</th>
                 <th className="p-4 text-center">Nunca</th>
                 <th className="p-4 text-center">Algunas veces</th>
                 <th className="p-4 text-center">Casi siempre</th>
@@ -222,11 +235,11 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
                 <tr key={question.id}>
                   <td className="p-4 font-mono font-bold">{question.label}</td>
                   <td className="max-w-xl p-4">{question.question}</td>
-                  <td className="p-4 text-center font-mono font-bold">{question.average}</td>
-                  <td className="p-4 text-center">{question.never}</td>
-                  <td className="p-4 text-center">{question.sometimes}</td>
-                  <td className="p-4 text-center">{question.almostAlways}</td>
-                  <td className="p-4 text-center">{question.always}</td>
+                  <td className="p-4 text-center font-mono font-bold">{formatScorePercentage(question.average)}</td>
+                  <td className="p-4 text-center">{formatResponsePercentage(question.never, question.responses)}</td>
+                  <td className="p-4 text-center">{formatResponsePercentage(question.sometimes, question.responses)}</td>
+                  <td className="p-4 text-center">{formatResponsePercentage(question.almostAlways, question.responses)}</td>
+                  <td className="p-4 text-center">{formatResponsePercentage(question.always, question.responses)}</td>
                 </tr>
               ))}
             </tbody>
