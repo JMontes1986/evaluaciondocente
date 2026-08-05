@@ -27,6 +27,7 @@ interface GenerateGroqDashboardAnalysisOptions {
   apiKey: string;
   model?: string;
   prompt: string;
+  fallbackPrompt?: string;
   fetcher?: typeof fetch;
 }
 
@@ -35,7 +36,7 @@ function requestBody(model: string, prompt: string) {
     model,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.6,
-    max_completion_tokens: 3072,
+    max_completion_tokens: 2200,
     top_p: 0.8,
     stream: false
   };
@@ -97,64 +98,82 @@ export async function generateGroqDashboardAnalysis({
   apiKey,
   model,
   prompt,
+  fallbackPrompt,
   fetcher = fetch
 }: GenerateGroqDashboardAnalysisOptions) {
   const primaryModel = model?.trim() || DEFAULT_GROQ_MODEL;
-  const attempts = primaryModel === GROQ_FALLBACK_MODEL
+  const models = primaryModel === GROQ_FALLBACK_MODEL
     ? [primaryModel, primaryModel]
     : [primaryModel, GROQ_FALLBACK_MODEL];
+  const prompts = fallbackPrompt && fallbackPrompt !== prompt
+    ? [prompt, fallbackPrompt]
+    : [prompt];
   let lastError: GroqDashboardError | null = null;
+  let requestAttempt = 0;
 
-  for (let index = 0; index < attempts.length; index += 1) {
-    const attemptedModel = attempts[index];
-    let response: Response;
-    try {
-      response = await fetcher("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(requestBody(attemptedModel, prompt)),
-        signal: AbortSignal.timeout(index === 0 ? 35_000 : 18_000)
-      });
-    } catch (caught) {
-      const detail = caught instanceof Error ? caught.message : "Network error";
+  for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
+    const attemptedModel = models[modelIndex];
+    for (let promptIndex = 0; promptIndex < prompts.length; promptIndex += 1) {
+      const attemptedPrompt = prompts[promptIndex];
+      requestAttempt += 1;
+      let response: Response;
+      try {
+        response = await fetcher("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(requestBody(attemptedModel, attemptedPrompt)),
+          signal: AbortSignal.timeout(requestAttempt === 1 ? 35_000 : 18_000)
+        });
+      } catch (caught) {
+        const detail = caught instanceof Error ? caught.message : "Network error";
+        lastError = new GroqDashboardError(
+          "Groq tardó demasiado en responder. Intenta nuevamente.",
+          504,
+          undefined,
+          detail
+        );
+        break;
+      }
+
+      if (!response.ok) {
+        const detail = await errorDetail(response);
+        const error = publicError(response, detail);
+        lastError = error;
+        if (response.status === 413) {
+          if (promptIndex + 1 < prompts.length) continue;
+          const nextModel = models[modelIndex + 1];
+          if (nextModel && nextModel !== attemptedModel) break;
+          throw error;
+        }
+        if (response.status === 401 || response.status === 429) throw error;
+        if (modelIndex + 1 < models.length && retryableStatuses.has(response.status)) break;
+        throw error;
+      }
+
+      const completion = completionSchema.safeParse(await response.json().catch(() => null));
+      const analysis = completion.success
+        ? completion.data.choices[0].message.content?.trim()
+        : undefined;
+      if (analysis) return {
+        analysis,
+        model: attemptedModel,
+        compacted: promptIndex > 0
+      };
+
+      const finishReason = completion.success
+        ? completion.data.choices[0].finish_reason ?? "unknown"
+        : "invalid_completion";
       lastError = new GroqDashboardError(
-        "Groq tardó demasiado en responder. Intenta nuevamente.",
-        504,
-        undefined,
-        detail
+        "Groq terminó la solicitud sin devolver un análisis. Intenta nuevamente.",
+        502,
+        response.status,
+        finishReason
       );
-      if (index + 1 < attempts.length) continue;
-      throw lastError;
+      break;
     }
-
-    if (!response.ok) {
-      const detail = await errorDetail(response);
-      const error = publicError(response, detail);
-      if (response.status === 401 || response.status === 413 || response.status === 429) throw error;
-      lastError = error;
-      if (index + 1 < attempts.length && retryableStatuses.has(response.status)) continue;
-      throw error;
-    }
-
-    const completion = completionSchema.safeParse(await response.json().catch(() => null));
-    const analysis = completion.success
-      ? completion.data.choices[0].message.content?.trim()
-      : undefined;
-    if (analysis) return { analysis, model: attemptedModel };
-
-    const finishReason = completion.success
-      ? completion.data.choices[0].finish_reason ?? "unknown"
-      : "invalid_completion";
-    lastError = new GroqDashboardError(
-      "Groq terminó la solicitud sin devolver un análisis. Intenta nuevamente.",
-      502,
-      response.status,
-      finishReason
-    );
-    if (index + 1 >= attempts.length) throw lastError;
   }
 
   throw lastError ?? new GroqDashboardError("Groq no pudo generar el análisis.", 502);

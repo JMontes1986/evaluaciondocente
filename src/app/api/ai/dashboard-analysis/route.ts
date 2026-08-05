@@ -1,6 +1,6 @@
-import { encode } from "@toon-format/toon";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth/permissions";
+import { buildDashboardAnalysisPrompts } from "@/lib/ai/dashboard-analysis-prompt";
 import { generateGroqDashboardAnalysis, GroqDashboardError } from "@/lib/ai/groq-dashboard";
 import { adminAiRateLimiter } from "@/lib/security/rate-limit";
 import { getDashboardData } from "@/lib/services/analytics-service";
@@ -47,43 +47,24 @@ export async function POST(request: Request) {
   }
 
   const requestedModel = process.env.GROQ_MODEL;
-  const analyticalData = {
-    evaluation: data.period.name,
+  const { prompt, fallbackPrompt } = buildDashboardAnalysisPrompts({
+    periodName: data.period.name,
     privacyThreshold: data.minResponses,
     metrics: data.metrics,
     teachers: data.teacherAverages,
     grades: data.gradeAverages,
-    questions: data.questionAverages.map((question) => ({
-      label: question.label,
-      criterion: question.question,
-      average: question.average,
-      responses: question.responses,
-      distribution: {
-        never: question.never,
-        sometimes: question.sometimes,
-        almostAlways: question.almostAlways,
-        always: question.always
-      }
-    })),
+    questions: data.questionAverages,
     teacherGradePerformance: data.scatter
-  };
-  const analyticalDataToon = encode(analyticalData, { delimiter: "\t" });
-  const prompt = [
-    "Eres un analista educativo experto en evaluación docente y mejora institucional.",
-    "Responde en español claro, profesional y accionable.",
-    "Analiza únicamente los datos agregados proporcionados; no inventes datos ni intentes inferir identidades de estudiantes.",
-    "Distingue correlaciones de causas y menciona cuando una conclusión requiera validación cualitativa.",
-    "Estructura el informe con: Resumen ejecutivo, fortalezas, alertas prioritarias, análisis por docente y grado, preguntas críticas, y plan de acción a 30/60/90 días.",
-    "Incluye cifras concretas y prioriza máximo cinco decisiones.",
-    "Datos agregados en formato TOON:",
-    "```toon",
-    analyticalDataToon,
-    "```"
-  ].join("\n");
+  });
 
   let result: Awaited<ReturnType<typeof generateGroqDashboardAnalysis>>;
   try {
-    result = await generateGroqDashboardAnalysis({ apiKey, model: requestedModel, prompt });
+    result = await generateGroqDashboardAnalysis({
+      apiKey,
+      model: requestedModel,
+      prompt,
+      fallbackPrompt
+    });
   } catch (caught) {
     if (caught instanceof GroqDashboardError) {
       console.error("Groq dashboard analysis failed", {
@@ -106,7 +87,10 @@ export async function POST(request: Request) {
     entity_id: data.period.id,
     metadata: {
       model: result.model,
+      compacted_input: result.compacted,
       requested_model: requestedModel ?? null,
+      prompt_characters: prompt.length,
+      compact_prompt_characters: fallbackPrompt.length,
       teacher_filter: parsed.data.teacherId ?? null,
       grade_filter: parsed.data.gradeId ?? null,
       evaluations: data.metrics.evaluations
