@@ -10,10 +10,10 @@ export default function HomePage() {
         <Brand inverse />
         <div className="flex items-center gap-4">
           <Button asChild variant="outline" size="sm" className="border-white/20 bg-transparent text-white hover:bg-white/10">
-            <a href="/tutoriales/tutorial-resultados-exportaciones.docx" target="_blank" rel="noreferrer">
+            <Link href="/tutorial">
               <FileText className="size-4" />
               Ver tutorial
-            </a>
+            </Link>
           </Button>
           <span className="hidden text-xs font-medium uppercase tracking-[.2em] text-white/55 md:block">Colegio Franciscano</span>
         </div>
@@ -64,9 +64,9 @@ export default function HomePage() {
                 <p className="mt-1 text-sm text-white/60">Consulta la guía sin iniciar sesión.</p>
               </div>
               <Button asChild variant="outline" className="shrink-0 border-[#e4bf68]/50 bg-transparent text-white hover:bg-[#e4bf68]/15">
-                <a href="/tutoriales/tutorial-resultados-exportaciones.docx" target="_blank" rel="noreferrer" aria-label="Abrir tutorial de resultados y exportaciones">
+                <Link href="/tutorial" aria-label="Abrir tutorial de resultados y exportaciones">
                   Abrir <ArrowRight className="size-4" />
-                </a>
+                </Link>
               </Button>
             </div>
           </article>
