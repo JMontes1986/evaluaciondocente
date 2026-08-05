@@ -69,23 +69,36 @@ export function AverageBarChart({
 export function QuestionAverageChart({ data }: { data: QuestionDatum[] }) {
   if (!data.length) return <EmptyChart />;
   const height = Math.max(420, data.length * 34);
+  const chartData = data.map((item) => ({
+    ...item,
+    percentage: scorePercentage(item.average)
+  }));
 
   return (
-    <div style={{ height }} className="w-full" aria-label="Promedio por pregunta">
+    <div style={{ height }} className="w-full" aria-label="Promedio porcentual por pregunta">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ left: 0, right: 28 }}>
+        <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 28 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
-          <XAxis type="number" domain={[1, 4]} tick={{ fontSize: 11 }} />
+          <XAxis
+            type="number"
+            domain={[0, 100]}
+            ticks={[0, 25, 50, 75, 100]}
+            tickFormatter={(value) => `${value}%`}
+            tick={{ fontSize: 11 }}
+          />
           <YAxis type="category" dataKey="label" width={42} tickLine={false} axisLine={false} />
           <Tooltip
-            formatter={(value) => [`${value} / 4`, "Promedio"]}
+            formatter={(value) => [
+              `${Number(value).toLocaleString("es-CO", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`,
+              "Promedio"
+            ]}
             labelFormatter={(label) => {
-              const question = data.find((item) => item.label === label);
+              const question = chartData.find((item) => item.label === label);
               return question ? `${question.label}: ${question.question}` : label;
             }}
           />
-          <Bar dataKey="average" name="Promedio" radius={[0, 5, 5, 0]}>
-            {data.map((item) => (
+          <Bar dataKey="percentage" name="Promedio" radius={[0, 5, 5, 0]}>
+            {chartData.map((item) => (
               <Cell
                 key={item.id}
                 fill={item.average < 2.5 ? "#b42318" : item.average < 3.2 ? "#e7892b" : "#087a63"}
