@@ -265,8 +265,8 @@ function QuestionInsight({
         </div>
         {question ? (
           <span className="shrink-0 text-right font-mono">
-            <span className="block text-2xl font-semibold">{formatScore(question.average)} / 4</span>
-            <span className="mt-1 block text-xs font-semibold text-muted-foreground">{formatScorePercentage(question.average)}</span>
+            <span className="block text-3xl font-semibold tracking-tight">{formatScorePercentage(question.average)}</span>
+            <span className="mt-1 block text-sm font-semibold text-muted-foreground">{formatScore(question.average)} / 4</span>
           </span>
         ) : null}
       </div>
