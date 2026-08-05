@@ -1,14 +1,22 @@
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight, BookOpenCheck, FileText, LockKeyhole, ShieldCheck } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
   return <main className="min-h-[100dvh] bg-[#102a4b] text-white">
     <div className="institutional-grid min-h-[100dvh]">
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
+      <header className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
         <Brand inverse />
-        <span className="hidden text-xs font-medium uppercase tracking-[.2em] text-white/55 sm:block">Colegio Franciscano</span>
+        <div className="flex items-center gap-4">
+          <Button asChild variant="outline" size="sm" className="border-white/20 bg-transparent text-white hover:bg-white/10">
+            <a href="/tutoriales/tutorial-resultados-exportaciones.docx" target="_blank" rel="noreferrer">
+              <FileText className="size-4" />
+              Ver tutorial
+            </a>
+          </Button>
+          <span className="hidden text-xs font-medium uppercase tracking-[.2em] text-white/55 md:block">Colegio Franciscano</span>
+        </div>
       </header>
 
       <section className="mx-auto grid max-w-7xl gap-12 px-4 py-12 sm:px-6 md:py-20 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:px-8 lg:py-24">
@@ -44,6 +52,21 @@ export default function HomePage() {
               <div><h2 className="text-xl font-semibold tracking-tight">Acceso administrador</h2><p className="mt-1 text-sm text-white/55">Gestión, análisis e informes.</p></div>
               <Button asChild variant="outline" className="shrink-0 border-white/20 bg-transparent text-white hover:bg-white/10">
                 <Link href="/login" aria-label="Acceder a administración"><ArrowRight className="size-4" /></Link>
+              </Button>
+            </div>
+          </article>
+          <article className="rounded-[1.4rem] border border-[#e4bf68]/30 bg-[#e4bf68]/10 p-6 sm:p-7">
+            <FileText className="size-6 text-[#e4bf68]" strokeWidth={1.7} />
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[.18em] text-white/50">Ayuda pública</p>
+            <div className="mt-2 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold tracking-tight">Tutorial de resultados y exportaciones</h2>
+                <p className="mt-1 text-sm text-white/60">Consulta la guía sin iniciar sesión.</p>
+              </div>
+              <Button asChild variant="outline" className="shrink-0 border-[#e4bf68]/50 bg-transparent text-white hover:bg-[#e4bf68]/15">
+                <a href="/tutoriales/tutorial-resultados-exportaciones.docx" target="_blank" rel="noreferrer" aria-label="Abrir tutorial de resultados y exportaciones">
+                  Abrir <ArrowRight className="size-4" />
+                </a>
               </Button>
             </div>
           </article>
