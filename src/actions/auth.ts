@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { ADMIN_MODULE_KEYS, firstModulePath, type AdminModuleKey } from "@/lib/auth/modules";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/services/audit-service";
-import { loginSchema } from "@/lib/validation/schemas";
+import { changePasswordSchema, loginSchema } from "@/lib/validation/schemas";
 import type { AppRole } from "@/types/database.types";
 
 export interface FormState { error?: string; success?: string }
@@ -75,4 +75,37 @@ export async function requestPasswordResetAction(_state: FormState, formData: Fo
   await supabase.auth.resetPasswordForEmail(parsed.data, { redirectTo: `${appUrl}/actualizar-contrasena` });
   await writeAuditLog({ action: "ADMIN_PASSWORD_RESET_REQUEST", entity: "auth", category: "security", metadata: { requested: true } });
   return { success: "Si el correo está registrado, recibirá instrucciones para continuar." };
+}
+
+export async function changePasswordAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const parsed = changePasswordSchema.safeParse({
+    currentPassword: formData.get("currentPassword"),
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword")
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Revisa las contraseñas ingresadas." };
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return { error: "La sesión ya no es válida. Vuelve a iniciar sesión." };
+
+  const { error: verificationError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: parsed.data.currentPassword
+  });
+  if (verificationError) {
+    await writeAuditLog({ actorId: user.id, action: "ADMIN_PASSWORD_CHANGE_FAILURE", entity: "auth", category: "security", status: "failure", metadata: { reason: "invalid_current_password" } });
+    return { error: "La contraseña actual no es correcta." };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword });
+  if (error) {
+    await writeAuditLog({ actorId: user.id, action: "ADMIN_PASSWORD_CHANGE_FAILURE", entity: "auth", category: "security", status: "failure", metadata: { reason: "provider_rejected_change" } });
+    return { error: "No fue posible actualizar la contraseña. Inténtalo nuevamente." };
+  }
+
+  await writeAuditLog({ actorId: user.id, action: "ADMIN_PASSWORD_CHANGE", entity: "auth", category: "security" });
+  return { success: "Contraseña actualizada correctamente." };
 }

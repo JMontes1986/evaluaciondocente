@@ -2,6 +2,22 @@ import { z } from "zod";
 
 export const studentCodeSchema = z.string().trim().min(3).max(40).regex(/^[A-Za-z0-9-]+$/);
 export const loginSchema = z.object({ email: z.email(), password: z.string().min(8).max(128) });
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(8).max(128),
+  newPassword: z.string()
+    .min(12, "La nueva contraseña debe tener al menos 12 caracteres.")
+    .max(128, "La nueva contraseña es demasiado larga.")
+    .regex(/[a-z]/, "Incluye al menos una letra minúscula.")
+    .regex(/[A-Z]/, "Incluye al menos una letra mayúscula.")
+    .regex(/[0-9]/, "Incluye al menos un número."),
+  confirmPassword: z.string().min(12).max(128)
+}).refine((value) => value.newPassword === value.confirmPassword, {
+  message: "Las contraseñas nuevas no coinciden.",
+  path: ["confirmPassword"]
+}).refine((value) => value.currentPassword !== value.newPassword, {
+  message: "La nueva contraseña debe ser diferente de la actual.",
+  path: ["newPassword"]
+});
 export const teacherSchema = z.object({
   fullName: z.string().trim().min(3).max(180),
   email: z.union([z.email(), z.literal("")]).optional(),

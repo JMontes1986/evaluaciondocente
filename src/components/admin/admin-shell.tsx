@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, KeyRound, LogOut } from "lucide-react";
 import { logoutAction } from "@/actions/auth";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { Brand } from "@/components/brand";
@@ -85,9 +86,14 @@ export function AdminShell({
               <p className="text-sm font-semibold">{user.fullName}</p>
               <p className="text-xs text-muted-foreground">{user.role}</p>
             </div>
-            <form action={logoutAction}>
-              <Button variant="ghost" size="sm"><LogOut className="size-4" /> Cerrar sesión</Button>
-            </form>
+            <div className="flex items-center gap-1">
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/administracion/cambiar-contrasena"><KeyRound className="size-4" /> <span className="hidden sm:inline">Cambiar contraseña</span></Link>
+              </Button>
+              <form action={logoutAction}>
+                <Button variant="ghost" size="sm"><LogOut className="size-4" /> <span className="hidden sm:inline">Cerrar sesión</span></Button>
+              </form>
+            </div>
           </div>
         </header>
         <main className="px-4 py-7 sm:px-6 lg:px-8 lg:py-9">{children}</main>
