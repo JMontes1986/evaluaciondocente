@@ -5,6 +5,7 @@ import { generateGroqDashboardAnalysis, GroqDashboardError } from "@/lib/ai/groq
 import { adminAiRateLimiter } from "@/lib/security/rate-limit";
 import { getDashboardData } from "@/lib/services/analytics-service";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { DashboardScopeError } from "@/lib/auth/dashboard-scope";
 
 export const maxDuration = 60;
 
@@ -38,7 +39,15 @@ export async function POST(request: Request) {
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) return Response.json({ error: "Los filtros no son válidos." }, { status: 400 });
 
-  const data = await getDashboardData(parsed.data);
+  let data: Awaited<ReturnType<typeof getDashboardData>>;
+  try {
+    data = await getDashboardData(parsed.data);
+  } catch (caught) {
+    if (caught instanceof DashboardScopeError) {
+      return Response.json({ error: caught.message }, { status: 403 });
+    }
+    throw caught;
+  }
   if (!data.period || data.metrics.evaluations < data.minResponses || !data.questionAverages.length) {
     return Response.json(
       { error: `Se requieren al menos ${data.minResponses} evaluaciones para generar un análisis.` },
@@ -91,8 +100,8 @@ export async function POST(request: Request) {
       requested_model: requestedModel ?? null,
       prompt_characters: prompt.length,
       compact_prompt_characters: fallbackPrompt.length,
-      teacher_filter: parsed.data.teacherId ?? null,
-      grade_filter: parsed.data.gradeId ?? null,
+      teacher_filter: data.filters.teacherId ?? null,
+      grade_filter: data.filters.gradeId ?? null,
       evaluations: data.metrics.evaluations
     }
   });

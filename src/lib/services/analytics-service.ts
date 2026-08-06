@@ -1,13 +1,14 @@
 import "server-only";
+import {
+  limitDashboardGrade,
+  scopeDashboardFilters,
+  type DashboardFilterInput
+} from "@/lib/auth/dashboard-scope";
 import { requireModule } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSystemSettings } from "@/lib/services/system-settings-service";
 
-export interface DashboardFilters {
-  periodId?: string;
-  teacherId?: string;
-  gradeId?: string;
-}
+export type DashboardFilters = DashboardFilterInput;
 
 export interface AverageDatum {
   id: string;
@@ -115,26 +116,51 @@ function average(sum: number, count: number) {
 }
 
 export async function getDashboardData(filters: DashboardFilters = {}) {
-  await requireModule("dashboard");
+  const identity = await requireModule("dashboard");
+  const requestedScope = scopeDashboardFilters(filters, identity);
   const admin = createAdminClient();
   const now = new Date().toISOString();
-  const [{ data: periods }, { data: teachers }, { data: grades }, { data: questions }, systemSettings] = await Promise.all([
-    admin.from("evaluation_periods").select("id,name,active,start_date,end_date").order("start_date", { ascending: false }),
-    admin.from("teachers").select("id,full_name,active").order("full_name"),
-    admin.from("grades").select("id,name,active").order("order_number"),
+  const [{ data: periods }, { data: questions }, systemSettings] = await Promise.all([
+    admin.from("evaluation_periods").select("id,name,academic_year_id,active,start_date,end_date").order("start_date", { ascending: false }),
     admin.from("evaluation_questions").select("id,text,order_number").order("order_number"),
     getSystemSettings()
   ]);
 
-  const requestedPeriod = (periods ?? []).find((period) => period.id === filters.periodId);
+  const requestedPeriod = (periods ?? []).find((period) => period.id === requestedScope.filters.periodId);
   const currentPeriod = (periods ?? []).find(
     (period) => period.active && period.start_date <= now && period.end_date >= now
   );
   const period = requestedPeriod ?? currentPeriod ?? periods?.[0] ?? null;
   const minResponses = systemSettings.minResponses;
 
+  let assignedGradeIds: string[] = [];
+  if (requestedScope.teacherScoped) {
+    let assignmentsQuery = admin
+      .from("teacher_assignments")
+      .select("grade_id")
+      .eq("teacher_id", requestedScope.filters.teacherId!)
+      .eq("active", true);
+    if (period) assignmentsQuery = assignmentsQuery.eq("academic_year_id", period.academic_year_id);
+    const { data: assignments } = await assignmentsQuery;
+    assignedGradeIds = [...new Set((assignments ?? []).map((assignment) => assignment.grade_id))];
+  }
+
+  const teacherQuery = admin.from("teachers").select("id,full_name,active").order("full_name");
+  const teachersPromise = requestedScope.teacherScoped
+    ? teacherQuery.eq("id", requestedScope.filters.teacherId!)
+    : teacherQuery;
+  const gradesPromise = requestedScope.teacherScoped
+    ? assignedGradeIds.length
+      ? admin.from("grades").select("id,name,active").in("id", assignedGradeIds).order("order_number")
+      : Promise.resolve({ data: [] })
+    : admin.from("grades").select("id,name,active").order("order_number");
+  const [{ data: teachers }, { data: grades }] = await Promise.all([teachersPromise, gradesPromise]);
+  const scope = limitDashboardGrade(requestedScope, new Set((grades ?? []).map((grade) => grade.id)));
+
   if (!period) {
     return {
+      filters: scope.filters,
+      teacherScoped: scope.teacherScoped,
       period: null,
       periods: periods ?? [],
       teachers: teachers ?? [],
@@ -154,7 +180,7 @@ export async function getDashboardData(filters: DashboardFilters = {}) {
     };
   }
 
-  const evaluations = await fetchEvaluations(period.id, filters);
+  const evaluations = await fetchEvaluations(period.id, scope.filters);
   const answers = evaluations.length >= minResponses
     ? await fetchAnswers(evaluations.map((evaluation) => evaluation.id))
     : [];
@@ -284,6 +310,8 @@ export async function getDashboardData(filters: DashboardFilters = {}) {
   const totalScore = answers.reduce((sum, answer) => sum + answer.score, 0);
 
   return {
+    filters: scope.filters,
+    teacherScoped: scope.teacherScoped,
     period,
     periods: periods ?? [],
     teachers: (teachers ?? []).filter((teacher) => teacher.active),

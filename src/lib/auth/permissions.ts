@@ -29,6 +29,7 @@ export const requireAdmin = cache(async (): Promise<AdminIdentity> => {
     .eq("id", user.id)
     .single();
   if (!profile?.active) redirect("/login?error=unauthorized");
+  if (profile.role === "DOCENTE" && !profile.teacher_id) redirect("/login?error=unauthorized");
 
   let modules: AdminModuleKey[] = [];
   if (fullAccessRoles.includes(profile.role)) {

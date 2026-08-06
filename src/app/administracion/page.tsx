@@ -50,7 +50,9 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
   const teacherId = uuidPattern.test(params.docente ?? "") ? params.docente : undefined;
   const gradeId = uuidPattern.test(params.grado ?? "") ? params.grado : undefined;
   const data = await getDashboardData({ periodId, teacherId, gradeId });
-  const hasFilters = Boolean(periodId || teacherId || gradeId);
+  const effectiveTeacherId = data.filters.teacherId;
+  const effectiveGradeId = data.filters.gradeId;
+  const hasFilters = Boolean(periodId || effectiveGradeId);
   const metrics = [
     ["Evaluaciones analizadas", data.metrics.evaluations, ClipboardCheck],
     ["Estudiantes participantes", data.metrics.students, GraduationCap],
@@ -88,10 +90,11 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           <select
             id="dashboard-teacher"
             name="docente"
-            defaultValue={teacherId ?? ""}
+            defaultValue={effectiveTeacherId ?? ""}
+            disabled={data.teacherScoped}
             className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm"
           >
-            <option value="">Todos los docentes</option>
+            {!data.teacherScoped && <option value="">Todos los docentes</option>}
             {data.teachers.map((teacher) => <option key={teacher.id} value={teacher.id}>{teacher.full_name}</option>)}
           </select>
         </div>
@@ -100,7 +103,7 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
           <select
             id="dashboard-grade"
             name="grado"
-            defaultValue={gradeId ?? ""}
+            defaultValue={effectiveGradeId ?? ""}
             className="min-h-11 w-full rounded-lg border bg-background px-3 text-sm"
           >
             <option value="">Todos los grados</option>
@@ -158,8 +161,8 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         configured={Boolean(process.env.GROQ_API_KEY)}
         canAnalyze={data.metrics.evaluations >= data.minResponses && data.questionAverages.length > 0}
         periodId={data.period?.id}
-        teacherId={teacherId}
-        gradeId={gradeId}
+        teacherId={effectiveTeacherId}
+        gradeId={effectiveGradeId}
         model={process.env.GROQ_MODEL ?? DEFAULT_GROQ_MODEL}
       />
 
