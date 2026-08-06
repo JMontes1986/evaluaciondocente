@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { saveSemesterEvaluationAction } from "@/actions/admin";
+import { EvaluationWindowButton } from "@/components/admin/evaluation-window-button";
 import { PageHeading } from "@/components/admin/page-heading";
-import { StatusButton } from "@/components/admin/status-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -44,7 +44,7 @@ export default async function SemesterEvaluationsPage({ searchParams }: Semester
       <PageHeading
         eyebrow="Calendario"
         title="Evaluaciones docentes semestrales"
-        description="Configura la evaluación del primer o segundo semestre y define las fechas en que estará disponible."
+        description="Configura las fechas y abre o cierra la evaluación docente. Cuando está cerrada, ningún estudiante puede ingresar ni enviar respuestas."
       />
 
       <form
@@ -100,7 +100,7 @@ export default async function SemesterEvaluationsPage({ searchParams }: Semester
         </div>
         <label className="flex min-h-11 items-center gap-3 rounded-lg border px-4 text-sm">
           <input name="active" type="checkbox" defaultChecked={editingEvaluation?.active ?? false} className="size-4" />
-          Habilitar evaluación
+          Dejar evaluación abierta al guardar
         </label>
         <label className="flex min-h-11 items-center gap-3 rounded-lg border px-4 text-sm">
           <input name="allowFeedback" type="checkbox" defaultChecked={editingEvaluation?.allow_feedback ?? true} className="size-4" />
@@ -111,6 +111,10 @@ export default async function SemesterEvaluationsPage({ searchParams }: Semester
         </Button>
       </form>
 
+      <div className="mb-5 rounded-xl border border-amber-700/20 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950">
+        <strong>Control de acceso:</strong> la evaluación solo estará disponible si aparece como Abierta y la fecha actual se encuentra entre la apertura y el cierre configurados. Al cerrarla, el bloqueo es inmediato, incluso para formularios que ya estaban abiertos.
+      </div>
+
       <div className="divide-y rounded-xl border bg-card">
         {evaluations?.map((evaluation) => (
           <div key={evaluation.id} className="grid gap-3 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
@@ -120,7 +124,9 @@ export default async function SemesterEvaluationsPage({ searchParams }: Semester
                 Año {yearMap.get(evaluation.academic_year_id) ?? "sin definir"} · {formatDate(evaluation.start_date)} – {formatDate(evaluation.end_date)}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                <Badge>{evaluation.active ? "Habilitada" : "Deshabilitada"}</Badge>
+                <Badge className={evaluation.active ? "border-emerald-700/20 bg-emerald-700/10 text-emerald-800" : "border-slate-500/20 bg-slate-500/10 text-slate-700"}>
+                  {evaluation.active ? "Abierta" : "Cerrada"}
+                </Badge>
                 <Badge>{evaluation.allow_feedback ? "Con comentarios" : "Sin comentarios"}</Badge>
               </div>
             </div>
@@ -131,7 +137,7 @@ export default async function SemesterEvaluationsPage({ searchParams }: Semester
                   Editar
                 </Link>
               </Button>
-              <StatusButton table="evaluation_periods" id={evaluation.id} active={evaluation.active} />
+              <EvaluationWindowButton id={evaluation.id} open={evaluation.active} />
             </div>
           </div>
         ))}

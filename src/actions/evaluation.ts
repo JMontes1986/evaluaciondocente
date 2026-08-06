@@ -42,8 +42,10 @@ export async function submitEvaluationAction(_state: EvaluationState, formData: 
     p_feedback: parsed.data.feedback || null
   });
   if (error) {
-    await writeAuditLog({ action: "STUDENT_SUBMIT_EVALUATION_FAILURE", entity: "evaluations", entityId: session.student_id, category: "evaluation", status: "failure", metadata: { reason: error.message.includes("ALREADY_SUBMITTED") ? "already_submitted" : "database_error", teacher_id: parsed.data.teacherId, period_id: parsed.data.periodId, actor_type: "student" } });
+    const periodClosed = error.message.includes("PERIOD_NOT_ACTIVE");
+    await writeAuditLog({ action: "STUDENT_SUBMIT_EVALUATION_FAILURE", entity: "evaluations", entityId: session.student_id, category: "evaluation", status: "failure", metadata: { reason: error.message.includes("ALREADY_SUBMITTED") ? "already_submitted" : periodClosed ? "period_closed" : "database_error", teacher_id: parsed.data.teacherId, period_id: parsed.data.periodId, actor_type: "student" } });
     if (error.message.includes("ALREADY_SUBMITTED")) return { error: "Esta evaluación ya fue registrada." };
+    if (periodClosed) return { error: "La evaluación docente fue cerrada por la institución y ya no admite respuestas." };
     return { error: "No fue posible guardar la evaluación. Intenta nuevamente." };
   }
   await writeAuditLog({ action: "STUDENT_SUBMIT_EVALUATION", entity: "evaluations", entityId: typeof evaluationId === "string" ? evaluationId : null, category: "evaluation", metadata: { student_id: session.student_id, teacher_id: parsed.data.teacherId, period_id: parsed.data.periodId, assignment_id: parsed.data.assignmentId, actor_type: "student", answer_count: parsed.data.answers.length, has_feedback: Boolean(parsed.data.feedback) } });

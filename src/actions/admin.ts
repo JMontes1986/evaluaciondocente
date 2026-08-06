@@ -235,6 +235,28 @@ export async function saveSemesterEvaluationAction(formData: FormData) {
   redirect("/administracion/periodos");
 }
 
+export async function setEvaluationOpenAction(id: string, open: boolean) {
+  const adminUser = await requireModule("periodos");
+  const parsedId = semesterEvaluationSchema.shape.academicYearId.safeParse(id);
+  if (!parsedId.success) return;
+
+  const { error } = await createAdminClient()
+    .from("evaluation_periods")
+    .update({ active: open })
+    .eq("id", parsedId.data);
+  if (error) return;
+
+  await audit(
+    adminUser.id,
+    open ? "ADMIN_OPEN_EVALUATION" : "ADMIN_CLOSE_EVALUATION",
+    "evaluation_periods",
+    parsedId.data
+  );
+  revalidatePath("/administracion/periodos");
+  revalidatePath("/administracion", "layout");
+  revalidatePath("/evaluacion", "layout");
+}
+
 export async function createQuestionAction(formData: FormData) {
   const adminUser = await requireModule("preguntas");
   const parsed = questionSchema.safeParse({
