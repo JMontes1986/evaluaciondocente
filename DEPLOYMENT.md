@@ -12,6 +12,7 @@ Ejecuta las migraciones en orden, una sola vez, en el proyecto Supabase de desti
 8. `supabase/migrations/008_audit_logs_indexes.sql`
 9. `supabase/migrations/009_security_hardening.sql`
 10. `supabase/migrations/010_harden_evaluation_submission.sql`
+11. `supabase/migrations/011_profile_teacher_link.sql`
 
 Con Supabase CLI, desde la raíz del repositorio:
 

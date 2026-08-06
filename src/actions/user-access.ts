@@ -20,6 +20,7 @@ export interface RestrictedUser {
   role: "RECTOR" | "DIRECTIVO" | "COORDINADOR" | "DOCENTE";
   active: boolean;
   modules: AdminModuleKey[];
+  teacherId: string | null;
 }
 
 const restrictedRoleSchema = z.enum(["RECTOR", "DIRECTIVO", "COORDINADOR", "DOCENTE"]);
@@ -44,7 +45,7 @@ export async function getRestrictedUsers(): Promise<RestrictedUser[]> {
   const [{ data: profiles }, { data: permissions }, { data: authData }] = await Promise.all([
     admin
       .from("profiles")
-      .select("id,full_name,role,active")
+      .select("id,full_name,role,teacher_id,active")
       .in("role", ["RECTOR", "DIRECTIVO", "COORDINADOR", "DOCENTE"])
       .order("full_name"),
     admin.from("profile_module_permissions").select("profile_id,module_key"),
@@ -66,6 +67,7 @@ export async function getRestrictedUsers(): Promise<RestrictedUser[]> {
     role: profile.role as RestrictedUser["role"],
     active: profile.active,
     modules: modulesByUser.get(profile.id) ?? []
+    ,teacherId: profile.teacher_id
   }));
 }
 
@@ -79,14 +81,16 @@ export async function createRestrictedUserAction(
     email: institutionalEmailSchema,
     password: passwordSchema,
     role: restrictedRoleSchema
+    ,teacherId: z.uuid().nullable().optional()
   }).safeParse({
     fullName: formData.get("fullName"),
     email: formData.get("email"),
     password: formData.get("password"),
     role: formData.get("role")
+    ,teacherId: formData.get("teacherId") || null
   });
   const modules = parsed.success ? allowedModules(parsed.data.role, formData) : [];
-  if (!parsed.success || modules.length === 0) {
+  if (!parsed.success || modules.length === 0 || (parsed.data.role === "DOCENTE" && !parsed.data.teacherId)) {
     return { status: "error", message: "Revisa los datos y selecciona al menos un módulo." };
   }
 
@@ -111,7 +115,8 @@ export async function createRestrictedUserAction(
     id: userId,
     full_name: parsed.data.fullName,
     role: parsed.data.role,
-    active: true
+    active: true,
+    teacher_id: parsed.data.role === "DOCENTE" ? parsed.data.teacherId : null
   });
   if (profileError) {
     await admin.auth.admin.deleteUser(userId);
@@ -152,14 +157,16 @@ export async function updateRestrictedUserAction(
     fullName: z.string().trim().min(3).max(180),
     role: restrictedRoleSchema,
     active: z.boolean()
+    ,teacherId: z.uuid().nullable().optional()
   }).safeParse({
     profileId: formData.get("profileId"),
     fullName: formData.get("fullName"),
     role: formData.get("role"),
     active: formData.get("active") === "on"
+    ,teacherId: formData.get("teacherId") || null
   });
   const modules = parsed.success ? allowedModules(parsed.data.role, formData) : [];
-  if (!parsed.success || modules.length === 0) {
+  if (!parsed.success || modules.length === 0 || (parsed.data.role === "DOCENTE" && !parsed.data.teacherId)) {
     return { status: "error", message: "Selecciona al menos un módulo y revisa los datos." };
   }
 
@@ -201,7 +208,8 @@ export async function updateRestrictedUserAction(
   const { error: profileError } = await admin.from("profiles").update({
     full_name: parsed.data.fullName,
     role: parsed.data.role as AppRole,
-    active: parsed.data.active
+    active: parsed.data.active,
+    teacher_id: parsed.data.role === "DOCENTE" ? parsed.data.teacherId : null
   }).eq("id", parsed.data.profileId);
   if (profileError) return { status: "error", message: "Los módulos cambiaron, pero el perfil no pudo actualizarse." };
 

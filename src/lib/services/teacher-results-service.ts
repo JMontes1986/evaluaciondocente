@@ -86,7 +86,12 @@ export async function getTeacherResults({
   teacherId?: string;
   periodId?: string;
 }) {
-  await requireModule("resultados_docentes");
+  const identity = await requireModule("resultados_docentes");
+  const canViewAll = ["SUPER_ADMIN", "ADMIN", "RECTOR", "DIRECTIVO", "COORDINADOR"].includes(identity.role);
+  if (!canViewAll && !identity.teacherId) {
+    return { teachers: [], periods: [], teacher: null, period: null, minResponses: 5, report: null, distribution: [], lowestQuestion: null, highestQuestion: null, error: "La cuenta docente no tiene un docente asociado." };
+  }
+  const effectiveTeacherId = canViewAll ? teacherId : identity.teacherId ?? undefined;
   const admin = createAdminClient();
   const now = new Date().toISOString();
   const [{ data: teachers }, { data: periods }, settings] = await Promise.all([
@@ -98,7 +103,8 @@ export async function getTeacherResults({
     getSystemSettings()
   ]);
 
-  const teacher = (teachers ?? []).find((item) => item.id === teacherId) ?? null;
+  const visibleTeachers = canViewAll ? (teachers ?? []) : (teachers ?? []).filter((item) => item.id === effectiveTeacherId);
+  const teacher = visibleTeachers.find((item) => item.id === effectiveTeacherId) ?? null;
   const requestedPeriod = (periods ?? []).find((item) => item.id === periodId);
   const currentPeriod = (periods ?? []).find(
     (item) => item.active && item.start_date <= now && item.end_date >= now
@@ -107,7 +113,7 @@ export async function getTeacherResults({
 
   if (!teacher || !period) {
     return {
-      teachers: teachers ?? [],
+      teachers: visibleTeachers,
       periods: periods ?? [],
       teacher,
       period,
@@ -129,7 +135,7 @@ export async function getTeacherResults({
   const rankedQuestions = [...report.questions].sort((a, b) => a.average - b.average);
 
   return {
-    teachers: teachers ?? [],
+    teachers: visibleTeachers,
     periods: periods ?? [],
     teacher,
     period,

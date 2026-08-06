@@ -14,6 +14,7 @@ export interface AdminIdentity {
   email: string;
   fullName: string;
   role: AppRole;
+  teacherId: string | null;
   modules: AdminModuleKey[];
 }
 
@@ -24,7 +25,7 @@ export const requireAdmin = cache(async (): Promise<AdminIdentity> => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name,role,active")
+    .select("full_name,role,teacher_id,active")
     .eq("id", user.id)
     .single();
   if (!profile?.active) redirect("/login?error=unauthorized");
@@ -48,6 +49,7 @@ export const requireAdmin = cache(async (): Promise<AdminIdentity> => {
     email: user.email ?? "",
     fullName: profile.full_name,
     role: profile.role,
+    teacherId: profile.teacher_id,
     modules
   };
 });

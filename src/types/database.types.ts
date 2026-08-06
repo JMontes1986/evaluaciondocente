@@ -3,7 +3,7 @@ export type AppRole = "SUPER_ADMIN" | "ADMIN" | "RECTOR" | "DIRECTIVO" | "COORDI
 export interface Database {
   public: {
     Tables: {
-      profiles: { Row: { id: string; full_name: string; role: AppRole; active: boolean; created_at: string; updated_at: string }; Insert: { id: string; full_name: string; role?: AppRole; active?: boolean }; Update: { full_name?: string; role?: AppRole; active?: boolean }; Relationships: [] };
+      profiles: { Row: { id: string; full_name: string; role: AppRole; teacher_id: string | null; active: boolean; created_at: string; updated_at: string }; Insert: { id: string; full_name: string; teacher_id?: string | null; role?: AppRole; active?: boolean }; Update: { full_name?: string; teacher_id?: string | null; role?: AppRole; active?: boolean }; Relationships: [] };
       profile_module_permissions: { Row: { profile_id: string; module_key: string; granted_by: string | null; created_at: string }; Insert: { profile_id: string; module_key: string; granted_by?: string | null }; Update: { module_key?: string; granted_by?: string | null }; Relationships: [] };
       academic_years: { Row: { id: string; name: string; active: boolean; created_at: string; updated_at: string }; Insert: { id?: string; name: string; active?: boolean }; Update: { name?: string; active?: boolean }; Relationships: [] };
       grades: { Row: { id: string; name: string; order_number: number; active: boolean; created_at: string; updated_at: string }; Insert: { id?: string; name: string; order_number: number; active?: boolean }; Update: { name?: string; order_number?: number; active?: boolean }; Relationships: [] };
