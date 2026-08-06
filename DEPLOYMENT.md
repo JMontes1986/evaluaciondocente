@@ -11,6 +11,7 @@ Ejecuta las migraciones en orden, una sola vez, en el proyecto Supabase de desti
 7. `supabase/migrations/007_module_permissions.sql`
 8. `supabase/migrations/008_audit_logs_indexes.sql`
 9. `supabase/migrations/009_security_hardening.sql`
+10. `supabase/migrations/010_harden_evaluation_submission.sql`
 
 Con Supabase CLI, desde la raíz del repositorio:
 
@@ -52,7 +53,7 @@ where routine_schema = 'public'
   and privilege_type = 'EXECUTE';
 ```
 
-La migración `009_security_hardening.sql` revoca explícitamente `EXECUTE` a `public`, `anon` y `authenticated`. Las funciones quedan disponibles únicamente para el código confiable del servidor mediante `service_role`, evitando que un usuario autenticado pueda elegir un umbral de privacidad arbitrario.
+Las migraciones `009_security_hardening.sql` y `010_harden_evaluation_submission.sql` revocan explícitamente `EXECUTE` a `public`, `anon` y `authenticated` sobre las RPC protegidas. Las funciones quedan disponibles únicamente para el código confiable del servidor mediante `service_role`. La migración `010` también comprueba la coincidencia de año académico y aplica `allow_feedback` dentro de la transacción.
 
 ## Rotación de secretos
 
