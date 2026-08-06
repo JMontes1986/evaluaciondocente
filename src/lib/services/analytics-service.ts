@@ -65,6 +65,7 @@ async function fetchEvaluations(periodId: string, filters: DashboardFilters): Pr
       .from("evaluations")
       .select("id,teacher_id,student_id,grade_id")
       .eq("evaluation_period_id", periodId)
+      .order("id", { ascending: true })
       .range(offset, offset + 999);
     if (filters.teacherId) query = query.eq("teacher_id", filters.teacherId);
     if (filters.gradeId) query = query.eq("grade_id", filters.gradeId);
@@ -95,6 +96,8 @@ async function fetchAnswers(evaluationIds: string[]): Promise<AnswerRow[]> {
           .from("evaluation_answers")
           .select("evaluation_id,question_id,score")
           .in("evaluation_id", ids)
+          .order("evaluation_id", { ascending: true })
+          .order("question_id", { ascending: true })
           .range(offset, offset + 999);
         const page = data ?? [];
         chunkAnswers.push(...page);
