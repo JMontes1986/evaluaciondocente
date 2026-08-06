@@ -1,21 +1,5 @@
 import type { NextConfig } from "next";
 
-const production = process.env.NODE_ENV === "production";
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${production ? "" : " 'unsafe-eval'"}`,
-  "worker-src 'self' blob:",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
-  "connect-src 'self' https://*.supabase.co",
-  "font-src 'self' data:",
-  "object-src 'none'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  ...(production ? ["upgrade-insecure-requests"] : [])
-].join("; ");
-
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   experimental: { serverActions: { bodySizeLimit: "8mb" } },
@@ -30,8 +14,7 @@ const nextConfig: NextConfig = {
         { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
         { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-        { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-        { key: "Content-Security-Policy", value: contentSecurityPolicy }
+        { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }
       ]
     }, {
       source: "/reporte/docente/:path*",

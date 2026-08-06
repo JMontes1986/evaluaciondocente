@@ -1,9 +1,25 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { ADMIN_MODULE_KEYS, moduleForPathname, type AdminModuleKey } from "@/lib/auth/modules";
+import { buildContentSecurityPolicy, CONTENT_SECURITY_POLICY_HEADER } from "@/lib/security/csp";
+
+function secureResponse(response: NextResponse, contentSecurityPolicy: string) {
+  response.headers.set(CONTENT_SECURITY_POLICY_HEADER, contentSecurityPolicy);
+  return response;
+}
 
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const contentSecurityPolicy = buildContentSecurityPolicy(nonce);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set(CONTENT_SECURITY_POLICY_HEADER, contentSecurityPolicy);
+  const nextResponse = () => {
+    requestHeaders.set("cookie", request.cookies.toString());
+    return secureResponse(NextResponse.next({ request: { headers: requestHeaders } }), contentSecurityPolicy);
+  };
+  const redirectResponse = (url: URL) => secureResponse(NextResponse.redirect(url), contentSecurityPolicy);
+  let response = nextResponse();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return response;
@@ -13,7 +29,7 @@ export async function proxy(request: NextRequest) {
       getAll: () => request.cookies.getAll(),
       setAll: (cookiesToSet) => {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
+        response = nextResponse();
         cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       }
     }
@@ -27,7 +43,7 @@ export async function proxy(request: NextRequest) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
-    return NextResponse.redirect(loginUrl);
+    return redirectResponse(loginUrl);
   }
   if (!protectedRequest || !user || requiredModule === null) return response;
 
@@ -40,7 +56,7 @@ export async function proxy(request: NextRequest) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("error", "unauthorized");
-    return NextResponse.redirect(loginUrl);
+    return redirectResponse(loginUrl);
   }
 
   const isSuperAdmin = profile.role === "SUPER_ADMIN";
@@ -64,7 +80,7 @@ export async function proxy(request: NextRequest) {
   forbiddenUrl.pathname = "/administracion/sin-acceso";
   forbiddenUrl.search = "";
   forbiddenUrl.searchParams.set("modulo", requiredModule);
-  return NextResponse.redirect(forbiddenUrl);
+  return redirectResponse(forbiddenUrl);
 }
 
 export const config = {

@@ -10,7 +10,7 @@
 - Los reportes docentes respetan el umbral institucional de privacidad.
 - El análisis asistido se restringe en el servidor a `SUPER_ADMIN`, `ADMIN`, `RECTOR`, `DIRECTIVO` y `COORDINADOR`; las cuentas `DOCENTE` no pueden invocarlo aunque tengan acceso al dashboard.
 - Antes de llamar a Groq, los nombres de docentes se reemplazan por alias efímeros (`Docente 01`, `Docente 02`, etc.); no se envían nombres, UUID de docentes, correos, comentarios abiertos ni identidades de estudiantes.
-- La CSP de producción bloquea `eval`, objetos embebidos, framing y formularios hacia otros orígenes.
+- La CSP genera un nonce criptográfico por solicitud, aplica `script-src` con nonce y `strict-dynamic`, y elimina `unsafe-inline` para scripts en producción. También bloquea `eval`, objetos embebidos, framing y formularios hacia otros orígenes.
 - Las páginas administrativas, sesiones estudiantiles, exportaciones y reportes por token usan `no-store`.
 - Las sesiones estudiantiles usan el prefijo de cookie `__Host-` en producción.
 - Los filtros PostgREST construidos con `.or()` pasan por una lista permitida antes de entrar en su gramática.
@@ -36,4 +36,5 @@ Los alias solo existen durante la construcción de cada solicitud y no se guarda
 - Regenerar y verificar `package-lock.json` en un entorno con acceso TLS confiable a npm; el entorno local actual no permite completar `npm audit` ni una instalación limpia.
 - Configurar MFA en Supabase Auth para cuentas administrativas, especialmente `SUPER_ADMIN`.
 - Activar **Secure password change** en Supabase Dashboard > Authentication > Providers > Email.
+- Migrar `style-src` desde `unsafe-inline` hacia nonce o estilos externos después de verificar los estilos inline generados por las dependencias de interfaz.
 - Rotar inmediatamente `SUPABASE_SERVICE_ROLE_KEY`, `GROQ_API_KEY` y secretos de sesión si se sospecha exposición.

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { connection } from "next/server";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -11,7 +12,8 @@ export const metadata: Metadata = {
   description: "Plataforma institucional de evaluación docente del Colegio Franciscano Agustín Gemelli."
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  await connection();
   return (
     <html lang="es" className={`${geist.variable} ${mono.variable}`}>
       <body className="font-sans antialiased">
