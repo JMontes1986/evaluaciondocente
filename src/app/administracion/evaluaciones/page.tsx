@@ -1,7 +1,9 @@
 import { PageHeading } from "@/components/admin/page-heading";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireModule } from "@/lib/auth/permissions";
 
 export default async function EvaluationAdminPage() {
+  await requireModule("evaluaciones");
   const admin=createAdminClient(); const {data:rows}=await admin.from("evaluations").select("id,teacher_id,grade_id,evaluation_period_id,submitted_at").order("submitted_at",{ascending:false}).limit(250);
   const teacherIds=[...new Set((rows??[]).map(x=>x.teacher_id))],gradeIds=[...new Set((rows??[]).map(x=>x.grade_id))],periodIds=[...new Set((rows??[]).map(x=>x.evaluation_period_id))];
   const [{data:teachers},{data:grades},{data:periods}]=await Promise.all([

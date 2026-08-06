@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireModule } from "@/lib/auth/permissions";
 
 interface SubjectsPageProps {
   searchParams: Promise<{ editar?: string }>;
 }
 
 export default async function SubjectsPage({ searchParams }: SubjectsPageProps) {
+  await requireModule("asignaturas");
   const { editar } = await searchParams;
   const { data: subjects } = await createAdminClient()
     .from("subjects")

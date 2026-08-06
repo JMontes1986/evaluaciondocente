@@ -5,12 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireModule } from "@/lib/auth/permissions";
 
 interface QuestionsPageProps {
   searchParams: Promise<{ estado?: string }>;
 }
 
 export default async function QuestionsPage({ searchParams }: QuestionsPageProps) {
+  await requireModule("preguntas");
   const { estado } = await searchParams;
   const status = estado === "activas" || estado === "inactivas" ? estado : "todas";
   const admin = createAdminClient();

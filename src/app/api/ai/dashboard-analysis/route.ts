@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth/permissions";
+import { requireModule } from "@/lib/auth/permissions";
 import { buildDashboardAnalysisPrompts } from "@/lib/ai/dashboard-analysis-prompt";
 import { generateGroqDashboardAnalysis, GroqDashboardError } from "@/lib/ai/groq-dashboard";
 import { adminAiRateLimiter } from "@/lib/security/rate-limit";
@@ -15,7 +15,7 @@ const requestSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const adminUser = await requireAdmin();
+  const adminUser = await requireModule("dashboard");
   const rateLimit = await adminAiRateLimiter.check(`dashboard-ai:${adminUser.id}`);
   if (!rateLimit.allowed) {
     return Response.json(

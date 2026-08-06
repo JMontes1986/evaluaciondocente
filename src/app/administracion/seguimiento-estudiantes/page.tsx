@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { getEvaluationMonitoring } from "@/lib/services/evaluation-monitoring-service";
+import { requireModule } from "@/lib/auth/permissions";
 
 interface StudentMonitoringPageProps {
   searchParams: Promise<{
@@ -20,6 +21,7 @@ interface StudentMonitoringPageProps {
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export default async function StudentMonitoringPage({ searchParams }: StudentMonitoringPageProps) {
+  await requireModule("seguimiento");
   const params = await searchParams;
   const periodId = uuidPattern.test(params.evaluacion ?? "") ? params.evaluacion : undefined;
   const gradeId = uuidPattern.test(params.grado ?? "") ? params.grado : undefined;

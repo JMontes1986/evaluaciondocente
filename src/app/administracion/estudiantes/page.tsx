@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireModule } from "@/lib/auth/permissions";
 import { sanitizePostgrestSearch } from "@/lib/security/query";
 
 interface StudentsPageProps {
@@ -19,6 +20,7 @@ interface StudentsPageProps {
 }
 
 export default async function StudentsPage({ searchParams }: StudentsPageProps) {
+  await requireModule("estudiantes");
   const filters = await searchParams;
   const search = filters.buscar?.trim().slice(0, 80) ?? "";
   const gradeId = filters.grado ?? "";

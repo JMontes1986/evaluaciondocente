@@ -6,12 +6,14 @@ import { PageHeading } from "@/components/admin/page-heading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireModule } from "@/lib/auth/permissions";
 
 interface SemesterEvaluationsPageProps {
   searchParams: Promise<{ editar?: string }>;
 }
 
 export default async function SemesterEvaluationsPage({ searchParams }: SemesterEvaluationsPageProps) {
+  await requireModule("periodos");
   const { editar } = await searchParams;
   const admin = createAdminClient();
   const [{ data: evaluations }, { data: years }] = await Promise.all([

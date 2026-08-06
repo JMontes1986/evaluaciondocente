@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireModule } from "@/lib/auth/permissions";
 
 export default async function TeachersPage() {
+  await requireModule("docentes");
   const { data: teachers } = await createAdminClient()
     .from("teachers")
     .select("id,full_name,email,active")

@@ -6,12 +6,14 @@ import { StatusButton } from "@/components/admin/status-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireModule } from "@/lib/auth/permissions";
 
 interface AssignmentsPageProps {
   searchParams: Promise<{ docente?: string; grado?: string; editar?: string; reasignacion?: string; cantidad?: string }>;
 }
 
 export default async function AssignmentsPage({ searchParams }: AssignmentsPageProps) {
+  await requireModule("asignaciones");
   const { docente, grado, editar, reasignacion, cantidad } = await searchParams;
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   const teacherId = uuidPattern.test(docente ?? "")
