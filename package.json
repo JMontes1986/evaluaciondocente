@@ -8,8 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/*.test.ts",
-    "test:watch": "tsx --test --watch tests/*.test.ts"
+    "test": "tsx --test tests/core.test.ts tests/csv-import.test.ts tests/dashboard-analysis-prompt.test.ts tests/groq-dashboard-client.test.ts tests/teacher-evaluation-template.test.ts",
+    "test:watch": "tsx --test --watch tests/core.test.ts tests/csv-import.test.ts tests/dashboard-analysis-prompt.test.ts tests/groq-dashboard-client.test.ts tests/teacher-evaluation-template.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
