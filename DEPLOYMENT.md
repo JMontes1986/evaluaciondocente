@@ -24,6 +24,8 @@ supabase db push
 
 No se debe desplegar la aplicación hasta que `supabase db push` termine correctamente.
 
+En Supabase Dashboard, abre **Authentication > Providers > Email** y activa **Secure password change**. Esta opción es obligatoria: exige reautenticación para cambios de contraseña realizados desde sesiones que no sean recientes.
+
 Confirma inmediatamente el estado remoto:
 
 ```powershell

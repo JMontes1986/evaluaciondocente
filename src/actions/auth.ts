@@ -2,8 +2,13 @@
 
 import { createHash } from "node:crypto";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { ADMIN_MODULE_KEYS, firstModulePath, type AdminModuleKey } from "@/lib/auth/modules";
+import { studentSessionSecret } from "@/lib/env";
+import {
+  PASSWORD_RECOVERY_COOKIE,
+  verifyPasswordRecoveryMarker
+} from "@/lib/security/password-recovery";
 import { adminLoginAccountRateLimiter, adminLoginNetworkRateLimiter, passwordResetRateLimiter } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/services/audit-service";
@@ -94,7 +99,7 @@ export async function requestPasswordResetAction(_state: FormState, formData: Fo
   if (!rateLimit.allowed) return { success: "Si el correo está registrado, recibirá instrucciones para continuar." };
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const supabase = await createClient();
-  await supabase.auth.resetPasswordForEmail(parsed.data, { redirectTo: `${appUrl}/auth/callback?next=/actualizar-contrasena` });
+  await supabase.auth.resetPasswordForEmail(parsed.data, { redirectTo: `${appUrl}/auth/callback?flow=recovery` });
   await writeAuditLog({ action: "ADMIN_PASSWORD_RESET_REQUEST", entity: "auth", category: "security", metadata: { requested: true } });
   return { success: "Si el correo está registrado, recibirá instrucciones para continuar." };
 }
@@ -122,7 +127,10 @@ export async function changePasswordAction(_state: FormState, formData: FormData
     return { error: "La contraseña actual no es correcta." };
   }
 
-  const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword });
+  const { error } = await supabase.auth.updateUser({
+    current_password: parsed.data.currentPassword,
+    password: parsed.data.newPassword
+  });
   if (error) {
     await writeAuditLog({ actorId: user.id, action: "ADMIN_PASSWORD_CHANGE_FAILURE", entity: "auth", category: "security", status: "failure", metadata: { reason: "provider_rejected_change" } });
     return { error: "No fue posible actualizar la contraseña. Inténtalo nuevamente." };
@@ -142,6 +150,13 @@ export async function updateRecoveredPasswordAction(_state: FormState, formData:
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user?.email) return { error: "El enlace de recuperación ya no es válido. Solicita uno nuevo." };
+  const cookieStore = await cookies();
+  const recoveryMarker = cookieStore.get(PASSWORD_RECOVERY_COOKIE)?.value;
+  if (!verifyPasswordRecoveryMarker(recoveryMarker, user.id, studentSessionSecret())) {
+    await writeAuditLog({ actorId: user.id, action: "ADMIN_PASSWORD_RECOVERY_CHANGE_FAILURE", entity: "auth", category: "security", status: "failure", metadata: { reason: "invalid_recovery_marker" } });
+    return { error: "El enlace de recuperación ya no es válido. Solicita uno nuevo." };
+  }
+  cookieStore.delete(PASSWORD_RECOVERY_COOKIE);
   const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword });
   if (error) return { error: "No fue posible actualizar la contraseña. Solicita un enlace nuevo." };
   await writeAuditLog({ actorId: user.id, action: "ADMIN_PASSWORD_RECOVERY_CHANGE", entity: "auth", category: "security" });
