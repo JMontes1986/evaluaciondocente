@@ -18,6 +18,7 @@
 - El acceso administrativo y la recuperación de contraseña tienen límites de intentos por red y cuenta.
 - La recuperación exige un callback PKCE reciente y un marcador HttpOnly firmado, ligado al usuario, de diez minutos y consumo único.
 - Las exportaciones neutralizan valores que podrían interpretarse como fórmulas de hoja de cálculo.
+- Las importaciones XLSX inspeccionan y descomprimen de forma acotada cada entrada antes de usar ExcelJS: máximo 8 MB comprimidos, 64 MB descomprimidos, 32 MB por entrada, 2.048 entradas y relación máxima 200:1. También rechazan ZIP64, cifrado, estructuras inconsistentes y tamaños declarados falsos.
 - Los enlaces públicos de informes validan formato y longitud del token, no se indexan y no se almacenan en caché.
 - Next.js, React y React DOM deben mantenerse como mínimo en las versiones seguras declaradas en `package.json`.
 

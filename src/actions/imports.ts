@@ -3,6 +3,7 @@
 import ExcelJS from "exceljs";
 import { revalidatePath } from "next/cache";
 import { requireModule } from "@/lib/auth/permissions";
+import { MAX_XLSX_COMPRESSED_BYTES, validateXlsxArchive } from "@/lib/imports/xlsx-security";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { studentCodeSchema } from "@/lib/validation/schemas";
 
@@ -12,12 +13,24 @@ export async function importStudentsAction(formData: FormData) {
   if (
     !(file instanceof File)
     || file.size === 0
-    || file.size > 8_000_000
+    || file.size > MAX_XLSX_COMPRESSED_BYTES
     || !file.name.toLocaleLowerCase().endsWith(".xlsx")
   ) return;
 
+  const fileBytes = await file.arrayBuffer();
+  let archiveStats: ReturnType<typeof validateXlsxArchive>;
+  try {
+    archiveStats = validateXlsxArchive(fileBytes);
+  } catch {
+    return;
+  }
+
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(await file.arrayBuffer());
+  try {
+    await workbook.xlsx.load(fileBytes);
+  } catch {
+    return;
+  }
   const sheet = workbook.worksheets[0];
   if (!sheet || sheet.rowCount > 5_001 || sheet.columnCount > 20) return;
 
@@ -48,7 +61,13 @@ export async function importStudentsAction(formData: FormData) {
     user_id: user.id,
     action: "ADMIN_IMPORT_STUDENTS",
     entity: "students",
-    metadata: { accepted: records.length, file_name: file.name }
+    metadata: {
+      accepted: records.length,
+      file_name: file.name,
+      zip_entries: archiveStats.entries,
+      compressed_bytes: archiveStats.compressedBytes,
+      uncompressed_bytes: archiveStats.uncompressedBytes
+    }
   });
   revalidatePath("/administracion/estudiantes");
 }
