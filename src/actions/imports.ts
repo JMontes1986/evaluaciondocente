@@ -9,12 +9,17 @@ import { studentCodeSchema } from "@/lib/validation/schemas";
 export async function importStudentsAction(formData: FormData) {
   const user = await requireModule("importaciones");
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0 || file.size > 8_000_000) return;
+  if (
+    !(file instanceof File)
+    || file.size === 0
+    || file.size > 8_000_000
+    || !file.name.toLocaleLowerCase().endsWith(".xlsx")
+  ) return;
 
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(await file.arrayBuffer());
   const sheet = workbook.worksheets[0];
-  if (!sheet) return;
+  if (!sheet || sheet.rowCount > 5_001 || sheet.columnCount > 20) return;
 
   const admin = createAdminClient();
   const [{ data: grades }, { data: year }] = await Promise.all([

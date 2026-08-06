@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sanitizePostgrestSearch } from "@/lib/security/query";
 
 export interface MonitoringFilters {
   periodId?: string;
@@ -69,7 +70,7 @@ export async function getEvaluationMonitoring(filters: MonitoringFilters = {}) {
     .limit(500);
   if (filters.gradeId) studentsQuery = studentsQuery.eq("grade_id", filters.gradeId);
   if (filters.search) {
-    const safeSearch = filters.search.replace(/[,.*()%_]/g, " ").replace(/\s+/g, " ").trim();
+    const safeSearch = sanitizePostgrestSearch(filters.search);
     if (safeSearch) studentsQuery = studentsQuery.or(`code.ilike.%${safeSearch}%,full_name.ilike.%${safeSearch}%`);
   }
   const { data: students } = await studentsQuery;

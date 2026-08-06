@@ -7,8 +7,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getSystemSettings } from "@/lib/services/system-settings-service";
 
 export const dynamic="force-dynamic";
+export const metadata={robots:{index:false,follow:false,noarchive:true}};
 export default async function PublicTeacherReport({params}:{params:Promise<{token:string}>}){
-  const{token}=await params;if(token.length<32)notFound();const hash=createHash("sha256").update(token).digest("hex"),admin=createAdminClient();
+  const{token}=await params;if(token.length<32||token.length>128||!/^[A-Za-z0-9_-]+$/.test(token))notFound();const hash=createHash("sha256").update(token).digest("hex"),admin=createAdminClient();
   const{data:link}=await admin.from("report_links").select("teacher_id,evaluation_period_id,expires_at,revoked_at").eq("token_hash",hash).is("revoked_at",null).maybeSingle();
   if(!link||(link.expires_at&&new Date(link.expires_at)<new Date()))notFound();
   const settings=await getSystemSettings();

@@ -2,6 +2,7 @@ import "server-only";
 
 import { requireSuperAdmin } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sanitizePostgrestSearch } from "@/lib/security/query";
 
 export interface AuditLogFilters {
   query?: string;
@@ -23,7 +24,8 @@ export async function getAuditLogs(filters: AuditLogFilters = {}) {
   if (filters.action) query = query.eq("action", filters.action);
   if (filters.entity) query = query.eq("entity", filters.entity);
   if (filters.status) query = query.contains("metadata", { status: filters.status });
-  if (filters.query) query = query.or(`action.ilike.%${filters.query.replace(/[%_,()]/g, "")}%,entity.ilike.%${filters.query.replace(/[%_,()]/g, "")}%`);
+  const safeSearch = filters.query ? sanitizePostgrestSearch(filters.query) : "";
+  if (safeSearch) query = query.or(`action.ilike.%${safeSearch}%,entity.ilike.%${safeSearch}%`);
   const from = (page - 1) * pageSize;
   const { data: logs, count } = await query.range(from, from + pageSize - 1);
 

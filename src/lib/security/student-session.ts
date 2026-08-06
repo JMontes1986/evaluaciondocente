@@ -4,7 +4,9 @@ import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSystemSettings } from "@/lib/services/system-settings-service";
 
-const COOKIE_NAME = "colgemelli_student_session";
+const COOKIE_NAME = process.env.NODE_ENV === "production"
+  ? "__Host-colgemelli_student_session"
+  : "colgemelli_student_session";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -24,7 +26,7 @@ export async function createStudentSession(studentId: string) {
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax",
-    path: "/", expires: expiresAt
+    path: "/", expires: expiresAt, priority: "high"
   });
 }
 

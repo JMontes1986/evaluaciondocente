@@ -8,6 +8,7 @@ import {
   scorePercentage
 } from "../src/lib/calculations/scores";
 import { evaluationSchema, institutionalEmailSchema, studentCodeSchema } from "../src/lib/validation/schemas";
+import { sanitizePostgrestSearch } from "../src/lib/security/query";
 
 test("calcula promedio y porcentaje institucional", () => {
   assert.equal(average([4, 3, 4, 3.4]), 3.6);
@@ -29,6 +30,11 @@ test("solo permite correos institucionales en el acceso administrativo", () => {
   assert.equal(institutionalEmailSchema.safeParse("usuario@colgemelli.edu.co").success, true);
   assert.equal(institutionalEmailSchema.safeParse("usuario@gmail.com").success, false);
   assert.equal(institutionalEmailSchema.safeParse("usuario@colgemelli.edu.co.example.com").success, false);
+});
+
+test("neutraliza operadores de filtros PostgREST en búsquedas", () => {
+  assert.equal(sanitizePostgrestSearch("Ana),active.eq.true"), "Ana active.eq.true");
+  assert.equal(sanitizePostgrestSearch("José Pérez"), "José Pérez");
 });
 
 test("exige respuestas con puntajes entre 1 y 4", () => {

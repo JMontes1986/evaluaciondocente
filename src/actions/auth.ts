@@ -1,7 +1,10 @@
 "use server";
 
+import { createHash } from "node:crypto";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { ADMIN_MODULE_KEYS, firstModulePath, type AdminModuleKey } from "@/lib/auth/modules";
+import { adminLoginAccountRateLimiter, adminLoginNetworkRateLimiter, passwordResetRateLimiter } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/services/audit-service";
 import { changePasswordSchema, loginSchema } from "@/lib/validation/schemas";
@@ -13,10 +16,24 @@ const fullAccessRoles: AppRole[] = ["SUPER_ADMIN", "ADMIN"];
 const restrictedRoles: AppRole[] = ["RECTOR", "DIRECTIVO", "COORDINADOR", "DOCENTE"];
 
 export async function loginAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const requestHeaders = await headers();
+  const address = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const networkLimit = await adminLoginNetworkRateLimiter.check(`admin-login-ip:${address}`);
+  if (!networkLimit.allowed) {
+    await writeAuditLog({ action: "ADMIN_LOGIN_FAILURE", entity: "auth", category: "security", status: "warning", metadata: { reason: "rate_limited_network" } });
+    return { error: "Demasiados intentos de acceso. Espera unos minutos antes de continuar." };
+  }
+
   const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) {
     await writeAuditLog({ action: "ADMIN_LOGIN_FAILURE", entity: "auth", category: "authentication", status: "failure", metadata: { reason: "invalid_input" } });
     return { error: parsed.error.issues[0]?.message ?? "Revisa el correo y la contraseña." };
+  }
+  const emailFingerprint = createHash("sha256").update(parsed.data.email).digest("hex");
+  const accountLimit = await adminLoginAccountRateLimiter.check(`admin-login-account:${emailFingerprint}`);
+  if (!accountLimit.allowed) {
+    await writeAuditLog({ action: "ADMIN_LOGIN_FAILURE", entity: "auth", category: "security", status: "warning", metadata: { reason: "rate_limited_account" } });
+    return { error: "Demasiados intentos de acceso. Espera unos minutos antes de continuar." };
   }
 
   const supabase = await createClient();
@@ -70,6 +87,11 @@ export async function requestPasswordResetAction(_state: FormState, formData: Fo
   const email = String(formData.get("email") ?? "");
   const parsed = loginSchema.shape.email.safeParse(email);
   if (!parsed.success) return { error: "Ingresa un correo válido." };
+  const requestHeaders = await headers();
+  const address = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const fingerprint = createHash("sha256").update(`${address}:${parsed.data}`).digest("hex");
+  const rateLimit = await passwordResetRateLimiter.check(`password-reset:${fingerprint}`);
+  if (!rateLimit.allowed) return { success: "Si el correo está registrado, recibirá instrucciones para continuar." };
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data, { redirectTo: `${appUrl}/actualizar-contrasena` });

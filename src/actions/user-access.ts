@@ -5,6 +5,7 @@ import { z } from "zod";
 import { isAdminModuleKey, TEACHER_READ_ONLY_MODULES, type AdminModuleKey } from "@/lib/auth/modules";
 import { requireSuperAdmin } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { institutionalEmailSchema } from "@/lib/validation/schemas";
 import type { AppRole } from "@/types/database.types";
 
 export interface UserAccessState {
@@ -75,7 +76,7 @@ export async function createRestrictedUserAction(
   const superAdmin = await requireSuperAdmin();
   const parsed = z.object({
     fullName: z.string().trim().min(3).max(180),
-    email: z.email(),
+    email: institutionalEmailSchema,
     password: passwordSchema,
     role: restrictedRoleSchema
   }).safeParse({

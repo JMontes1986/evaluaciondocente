@@ -4,10 +4,16 @@ import { requireModule } from "@/lib/auth/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getReportsOverview } from "@/lib/services/report-service";
 
+function safeSpreadsheetCell(value: string | number) {
+  if (typeof value !== "string") return value;
+  const cleaned = value.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+  return /^[=+\-@]/.test(cleaned.trimStart()) ? `'${cleaned}` : cleaned;
+}
+
 function addSheet(workbook: ExcelJS.Workbook, name: string, headers: string[], rows: (string | number)[][]) {
   const sheet = workbook.addWorksheet(name);
   sheet.addRow(headers);
-  rows.forEach((row) => sheet.addRow(row));
+  rows.forEach((row) => sheet.addRow(row.map(safeSpreadsheetCell)));
   sheet.views = [{ state: "frozen", ySplit: 1 }];
   sheet.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: headers.length } };
   sheet.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };

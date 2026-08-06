@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sanitizePostgrestSearch } from "@/lib/security/query";
 
 interface StudentsPageProps {
   searchParams: Promise<{
@@ -32,7 +33,7 @@ export default async function StudentsPage({ searchParams }: StudentsPageProps) 
     .limit(1000);
 
   if (search) {
-    const safeSearch = search.replace(/[,.*()%_]/g, " ").replace(/\s+/g, " ").trim();
+    const safeSearch = sanitizePostgrestSearch(search);
     if (safeSearch) {
       studentsQuery = studentsQuery.or(`code.ilike.%${safeSearch}%,full_name.ilike.%${safeSearch}%`);
     }
