@@ -8,6 +8,8 @@
 - La RPC de evaluación valida estudiante, periodo, asignación, preguntas, rango y duplicados dentro de una transacción.
 - Los errores públicos no revelan la existencia de códigos ni detalles SQL.
 - Los reportes docentes respetan el umbral institucional de privacidad.
+- El análisis asistido se restringe en el servidor a `SUPER_ADMIN`, `ADMIN`, `RECTOR`, `DIRECTIVO` y `COORDINADOR`; las cuentas `DOCENTE` no pueden invocarlo aunque tengan acceso al dashboard.
+- Antes de llamar a Groq, los nombres de docentes se reemplazan por alias efímeros (`Docente 01`, `Docente 02`, etc.); no se envían nombres, UUID de docentes, correos, comentarios abiertos ni identidades de estudiantes.
 - La CSP de producción bloquea `eval`, objetos embebidos, framing y formularios hacia otros orígenes.
 - Las páginas administrativas, sesiones estudiantiles, exportaciones y reportes por token usan `no-store`.
 - Las sesiones estudiantiles usan el prefijo de cookie `__Host-` en producción.
@@ -18,6 +20,12 @@
 - Las exportaciones neutralizan valores que podrían interpretarse como fórmulas de hoja de cálculo.
 - Los enlaces públicos de informes validan formato y longitud del token, no se indexan y no se almacenan en caché.
 - Next.js, React y React DOM deben mantenerse como mínimo en las versiones seguras declaradas en `package.json`.
+
+## Tratamiento externo mediante Groq
+
+Al solicitar voluntariamente un análisis asistido, la aplicación transmite a la API externa de Groq el periodo, el umbral de privacidad y métricas agregadas: cantidades de evaluaciones, estudiantes y docentes; porcentajes por alias de docente y grado; resultados por pregunta; distribuciones de respuesta; y un subconjunto limitado de intersecciones docente–grado. La finalidad exclusiva es generar el informe ejecutivo mostrado al usuario directivo.
+
+Los alias solo existen durante la construcción de cada solicitud y no se guarda una tabla de correspondencia. La respuesta y los metadatos técnicos mínimos quedan sujetos a los controles y condiciones contractuales aplicables al proveedor externo. Antes de habilitar `GROQ_API_KEY` en producción, la institución debe validar sus condiciones de tratamiento, ubicación, conservación y eliminación de datos, y mantener actualizado el aviso de privacidad correspondiente.
 
 ## Pendientes operativos
 

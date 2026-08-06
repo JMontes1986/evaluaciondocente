@@ -20,6 +20,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatScorePercentage, formatScoreResult } from "@/lib/calculations/scores";
 import { DEFAULT_GROQ_MODEL } from "@/lib/ai/groq-models";
+import { canUseExternalAiAnalysis } from "@/lib/auth/dashboard-scope";
+import { requireModule } from "@/lib/auth/permissions";
 import { getDashboardData } from "@/lib/services/analytics-service";
 
 export const metadata = { title: "Dashboard analítico" };
@@ -49,7 +51,10 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
   const periodId = uuidPattern.test(params.evaluacion ?? "") ? params.evaluacion : undefined;
   const teacherId = uuidPattern.test(params.docente ?? "") ? params.docente : undefined;
   const gradeId = uuidPattern.test(params.grado ?? "") ? params.grado : undefined;
-  const data = await getDashboardData({ periodId, teacherId, gradeId });
+  const [data, identity] = await Promise.all([
+    getDashboardData({ periodId, teacherId, gradeId }),
+    requireModule("dashboard")
+  ]);
   const effectiveTeacherId = data.filters.teacherId;
   const effectiveGradeId = data.filters.gradeId;
   const hasFilters = Boolean(periodId || effectiveGradeId);
@@ -157,14 +162,16 @@ export default async function AdminDashboardPage({ searchParams }: AdminDashboar
         />
       </section>
 
-      <AiDecisionAnalysis
-        configured={Boolean(process.env.GROQ_API_KEY)}
-        canAnalyze={data.metrics.evaluations >= data.minResponses && data.questionAverages.length > 0}
-        periodId={data.period?.id}
-        teacherId={effectiveTeacherId}
-        gradeId={effectiveGradeId}
-        model={process.env.GROQ_MODEL ?? DEFAULT_GROQ_MODEL}
-      />
+      {canUseExternalAiAnalysis(identity.role) ? (
+        <AiDecisionAnalysis
+          configured={Boolean(process.env.GROQ_API_KEY)}
+          canAnalyze={data.metrics.evaluations >= data.minResponses && data.questionAverages.length > 0}
+          periodId={data.period?.id}
+          teacherId={effectiveTeacherId}
+          gradeId={effectiveGradeId}
+          model={process.env.GROQ_MODEL ?? DEFAULT_GROQ_MODEL}
+        />
+      ) : null}
 
       <div className="mt-8 grid gap-6 xl:grid-cols-2">
         <ChartSection

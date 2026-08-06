@@ -1,10 +1,18 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  canUseExternalAiAnalysis,
   DashboardScopeError,
   limitDashboardGrade,
   scopeDashboardFilters
 } from "../src/lib/auth/dashboard-scope";
+
+test("limita el análisis externo a roles directivos", () => {
+  for (const role of ["SUPER_ADMIN", "ADMIN", "RECTOR", "DIRECTIVO", "COORDINADOR"] as const) {
+    assert.equal(canUseExternalAiAnalysis(role), true);
+  }
+  assert.equal(canUseExternalAiAnalysis("DOCENTE"), false);
+});
 
 const ownTeacherId = "8dfec899-c886-48ee-af46-f419dde7ec6d";
 const otherTeacherId = "bd7e0c3c-f975-460d-8907-5a9ac3c33d41";

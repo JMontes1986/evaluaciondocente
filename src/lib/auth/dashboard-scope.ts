@@ -1,5 +1,17 @@
 import type { AppRole } from "@/types/database.types";
 
+const EXTERNAL_AI_DIRECTIVE_ROLES: readonly AppRole[] = [
+  "SUPER_ADMIN",
+  "ADMIN",
+  "RECTOR",
+  "DIRECTIVO",
+  "COORDINADOR"
+];
+
+export function canUseExternalAiAnalysis(role: AppRole) {
+  return EXTERNAL_AI_DIRECTIVE_ROLES.includes(role);
+}
+
 export interface DashboardFilterInput {
   periodId?: string;
   teacherId?: string;

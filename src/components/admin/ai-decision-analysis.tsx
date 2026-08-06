@@ -95,7 +95,7 @@ export function AiDecisionAnalysis({
             )}
           </h2>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            {groqModelLabel(activeModel)} interpreta exclusivamente los indicadores agregados visibles en este dashboard.
+            {groqModelLabel(activeModel)} procesa externamente indicadores agregados. Los docentes se envían con alias, sin nombres ni identificadores internos.
           </p>
         </div>
         {loading ? (

@@ -5,7 +5,7 @@ import { generateGroqDashboardAnalysis, GroqDashboardError } from "@/lib/ai/groq
 import { adminAiRateLimiter } from "@/lib/security/rate-limit";
 import { getDashboardData } from "@/lib/services/analytics-service";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DashboardScopeError } from "@/lib/auth/dashboard-scope";
+import { canUseExternalAiAnalysis, DashboardScopeError } from "@/lib/auth/dashboard-scope";
 
 export const maxDuration = 60;
 
@@ -17,6 +17,12 @@ const requestSchema = z.object({
 
 export async function POST(request: Request) {
   const adminUser = await requireModule("dashboard");
+  if (!canUseExternalAiAnalysis(adminUser.role)) {
+    return Response.json(
+      { error: "El análisis asistido está disponible únicamente para roles directivos." },
+      { status: 403 }
+    );
+  }
   const rateLimit = await adminAiRateLimiter.check(`dashboard-ai:${adminUser.id}`);
   if (!rateLimit.allowed) {
     return Response.json(

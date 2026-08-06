@@ -57,6 +57,19 @@ function selectPerformanceExtremes(items: IntersectionItem[]) {
   return [...new Map(selected.map((item) => [`${item.teacher}:${item.grade}`, item])).values()];
 }
 
+function createTeacherAliases(input: DashboardAnalysisInput) {
+  const aliases = new Map<string, string>();
+  const register = (teacher: string) => {
+    if (!aliases.has(teacher)) {
+      aliases.set(teacher, `Docente ${String(aliases.size + 1).padStart(2, "0")}`);
+    }
+  };
+
+  input.teachers.forEach((item) => register(item.name));
+  input.teacherGradePerformance.forEach((item) => register(item.teacher));
+  return aliases;
+}
+
 function instructions() {
   return [
     "Actúa como consultor sénior en analítica de datos, inteligencia de negocios y evaluación educativa.",
@@ -86,6 +99,14 @@ function compactAverage(items: AverageItem[], key: "docente" | "grado") {
   }));
 }
 
+function compactTeachers(items: AverageItem[], aliases: ReadonlyMap<string, string>) {
+  return items.map((item) => ({
+    docente: aliases.get(item.name) ?? "Docente",
+    p: percentage(item.average),
+    n: item.responses
+  }));
+}
+
 function compactQuestions(items: QuestionItem[]) {
   return items.map((item) => ({
     pregunta: item.label,
@@ -102,6 +123,7 @@ function compactQuestions(items: QuestionItem[]) {
 }
 
 export function buildDashboardAnalysisPrompts(input: DashboardAnalysisInput) {
+  const teacherAliases = createTeacherAliases(input);
   const baseData = {
     periodo: input.periodName,
     umbral_privacidad: input.privacyThreshold,
@@ -111,12 +133,12 @@ export function buildDashboardAnalysisPrompts(input: DashboardAnalysisInput) {
       docentes: input.metrics.teachers,
       promedio_pct: percentage(input.metrics.average)
     },
-    docentes: compactAverage(input.teachers, "docente"),
+    docentes: compactTeachers(input.teachers, teacherAliases),
     grados: compactAverage(input.grades, "grado"),
     preguntas: compactQuestions(input.questions)
   };
   const intersections = selectPerformanceExtremes(input.teacherGradePerformance).map((item) => ({
-    docente: item.teacher,
+    docente: teacherAliases.get(item.teacher) ?? "Docente",
     grado: item.grade,
     p: percentage(item.average),
     n: item.responses
