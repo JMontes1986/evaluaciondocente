@@ -17,7 +17,7 @@ export function LoginForm() {
         autoComplete="email"
         required
         placeholder="nombre@colgemelli.edu.co"
-        pattern="[^@\\s]+@colgemelli\\.edu\\.co"
+        pattern=".+@colgemelli[.]edu[.]co"
         title="Usa un correo del dominio @colgemelli.edu.co"
       />
     </div>
