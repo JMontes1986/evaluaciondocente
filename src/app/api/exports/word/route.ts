@@ -9,7 +9,7 @@ export async function GET(request:NextRequest){
   const summary=await getPeriodSummary(periodId);
   const table=new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[
     new TableRow({children:["Docente","Promedio","Evaluaciones"].map(text=>new TableCell({children:[new Paragraph({children:[new TextRun({text,bold:true})]})]}))}),
-    ...summary.rows.map(row=>new TableRow({children:[row.name,`${row.average} / 4`,String(row.responses)].map(text=>new TableCell({children:[new Paragraph(text)]}))}))
+    ...summary.rows.map(row=>new TableRow({children:[row.name,row.average===null?"Dato protegido":`${row.average} / 4`,String(row.responses)].map(text=>new TableCell({children:[new Paragraph(text)]}))}))
   ]});
   const doc=new Document({sections:[{children:[
     new Paragraph({text:"COLEGIO FRANCISCANO AGUSTÍN GEMELLI",heading:HeadingLevel.HEADING_2}),

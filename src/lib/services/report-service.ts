@@ -174,7 +174,7 @@ export async function getPeriodSummary(periodId: string) {
     rows: report.teachers.map((teacher) => ({
       name: teacher.name,
       responses: teacher.evaluations,
-      average: teacher.average ?? 0
+      average: teacher.average
     }))
   };
 }
