@@ -1,1 +1,8 @@
-node_modules
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Secrets and local environment files. Use .env.example as the only template.
+.env*
+!.env.example
