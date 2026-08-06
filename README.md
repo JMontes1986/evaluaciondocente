@@ -47,7 +47,7 @@ npm run build
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Base de datos](docs/DATABASE.md)
 - [Seguridad](docs/SECURITY.md)
-- [Despliegue](docs/DEPLOYMENT.md)
+- [Despliegue y migraciones](DEPLOYMENT.md)
 - [Guía de estudiantes](docs/USER_GUIDE.md)
 - [Guía administrativa](docs/ADMIN_GUIDE.md)
 - [Backup y recuperación](docs/BACKUP.md)
