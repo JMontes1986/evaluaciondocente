@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   ListChecks,
   ScrollText,
+  ShieldCheck,
   Settings,
   UserCog,
   UsersRound
@@ -38,6 +39,7 @@ const items = [
   ["/administracion/importaciones", "Importaciones", FileSpreadsheet, "importaciones"],
   ["/administracion/usuarios", "Usuarios", UserCog, "super_admin"],
   ["/administracion/logs", "Logs", ScrollText, "super_admin"],
+  ["/administracion/seguridad", "Seguridad", ShieldCheck, "super_admin"],
   ["/administracion/configuracion", "Configuración", Settings, "super_admin"]
 ] as const;
 
