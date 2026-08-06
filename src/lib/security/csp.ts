@@ -15,6 +15,8 @@ export function buildContentSecurityPolicy(
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${development ? " 'unsafe-eval'" : ""}`,
+    `script-src-elem 'self' 'nonce-${nonce}'`,
+    "script-src-attr 'none'",
     "worker-src 'self' blob:",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",

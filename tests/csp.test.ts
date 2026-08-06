@@ -7,12 +7,19 @@ test("la CSP de producción autoriza scripts con nonce y elimina unsafe-inline",
     development: false,
     production: true
   });
-  const scriptDirective = policy.split("; ").find((directive) => directive.startsWith("script-src"));
+  const directives = policy.split("; ");
+  const scriptDirective = directives.find((directive) => directive.startsWith("script-src "));
+  const scriptElementDirective = directives.find((directive) => directive.startsWith("script-src-elem "));
+  const scriptAttributeDirective = directives.find((directive) => directive.startsWith("script-src-attr "));
 
   assert.match(scriptDirective ?? "", /'nonce-nonce-de-prueba'/);
   assert.match(scriptDirective ?? "", /'strict-dynamic'/);
   assert.doesNotMatch(scriptDirective ?? "", /'unsafe-inline'/);
   assert.doesNotMatch(scriptDirective ?? "", /'unsafe-eval'/);
+  assert.match(scriptElementDirective ?? "", /'self'/);
+  assert.match(scriptElementDirective ?? "", /'nonce-nonce-de-prueba'/);
+  assert.doesNotMatch(scriptElementDirective ?? "", /'unsafe-inline'/);
+  assert.equal(scriptAttributeDirective, "script-src-attr 'none'");
   assert.match(policy, /upgrade-insecure-requests/);
 });
 
@@ -21,7 +28,7 @@ test("la CSP conserva unsafe-eval exclusivamente para desarrollo", () => {
     development: true,
     production: false
   });
-  const scriptDirective = policy.split("; ").find((directive) => directive.startsWith("script-src"));
+  const scriptDirective = policy.split("; ").find((directive) => directive.startsWith("script-src "));
 
   assert.match(scriptDirective ?? "", /'unsafe-eval'/);
   assert.doesNotMatch(policy, /upgrade-insecure-requests/);
