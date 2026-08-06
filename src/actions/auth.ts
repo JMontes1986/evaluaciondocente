@@ -7,7 +7,7 @@ import { ADMIN_MODULE_KEYS, firstModulePath, type AdminModuleKey } from "@/lib/a
 import { adminLoginAccountRateLimiter, adminLoginNetworkRateLimiter, passwordResetRateLimiter } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
 import { writeAuditLog } from "@/lib/services/audit-service";
-import { changePasswordSchema, loginSchema } from "@/lib/validation/schemas";
+import { changePasswordSchema, loginSchema, recoveredPasswordSchema } from "@/lib/validation/schemas";
 import type { AppRole } from "@/types/database.types";
 
 export interface FormState { error?: string; success?: string }
@@ -94,7 +94,7 @@ export async function requestPasswordResetAction(_state: FormState, formData: Fo
   if (!rateLimit.allowed) return { success: "Si el correo está registrado, recibirá instrucciones para continuar." };
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const supabase = await createClient();
-  await supabase.auth.resetPasswordForEmail(parsed.data, { redirectTo: `${appUrl}/actualizar-contrasena` });
+  await supabase.auth.resetPasswordForEmail(parsed.data, { redirectTo: `${appUrl}/auth/callback?next=/actualizar-contrasena` });
   await writeAuditLog({ action: "ADMIN_PASSWORD_RESET_REQUEST", entity: "auth", category: "security", metadata: { requested: true } });
   return { success: "Si el correo está registrado, recibirá instrucciones para continuar." };
 }
@@ -130,4 +130,21 @@ export async function changePasswordAction(_state: FormState, formData: FormData
 
   await writeAuditLog({ actorId: user.id, action: "ADMIN_PASSWORD_CHANGE", entity: "auth", category: "security" });
   return { success: "Contraseña actualizada correctamente." };
+}
+
+export async function updateRecoveredPasswordAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const parsed = recoveredPasswordSchema.safeParse({
+    newPassword: formData.get("newPassword"),
+    confirmPassword: formData.get("confirmPassword")
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Revisa la nueva contraseña." };
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return { error: "El enlace de recuperación ya no es válido. Solicita uno nuevo." };
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.newPassword });
+  if (error) return { error: "No fue posible actualizar la contraseña. Solicita un enlace nuevo." };
+  await writeAuditLog({ actorId: user.id, action: "ADMIN_PASSWORD_RECOVERY_CHANGE", entity: "auth", category: "security" });
+  await supabase.auth.signOut();
+  return { success: "Contraseña actualizada. Ya puedes iniciar sesión con tu nueva clave." };
 }

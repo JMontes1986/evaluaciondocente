@@ -26,6 +26,13 @@ export const changePasswordSchema = z.object({
   message: "La nueva contraseña debe ser diferente de la actual.",
   path: ["newPassword"]
 });
+export const recoveredPasswordSchema = z.object({
+  newPassword: changePasswordSchema.shape.newPassword,
+  confirmPassword: changePasswordSchema.shape.confirmPassword
+}).refine((value) => value.newPassword === value.confirmPassword, {
+  message: "Las contraseñas nuevas no coinciden.",
+  path: ["confirmPassword"]
+});
 export const teacherSchema = z.object({
   fullName: z.string().trim().min(3).max(180),
   email: z.union([z.email(), z.literal("")]).optional(),
