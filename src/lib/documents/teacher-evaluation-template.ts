@@ -63,23 +63,29 @@ function resultRow(rowXml: string, values: string[], totalLabel = false) {
   return nextRow;
 }
 
-function paragraph(text: string, options: { bold?: boolean; numbered?: boolean; pageBreakBefore?: boolean } = {}) {
+function paragraph(text: string, options: { bold?: boolean; numbered?: boolean } = {}) {
   const run = runProperties({ bold: options.bold, size: options.bold ? 24 : 22 });
   const numbering = options.numbered
     ? '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="3"/></w:numPr>'
     : "";
-  return `<w:p><w:pPr>${options.pageBreakBefore ? "<w:pageBreakBefore/>" : ""}<w:spacing w:before="${options.bold ? 180 : 60}" w:after="120"/>${options.bold ? '<w:jc w:val="center"/>' : ""}${numbering}${run}</w:pPr><w:r>${run}<w:t>${escapeWordXml(text)}</w:t></w:r></w:p>`;
+  return `<w:p><w:pPr><w:spacing w:before="${options.bold ? 180 : 60}" w:after="120"/>${options.bold ? '<w:jc w:val="center"/>' : ""}${numbering}${run}</w:pPr><w:r>${run}<w:t>${escapeWordXml(text)}</w:t></w:r></w:p>`;
 }
 
-function replaceParagraphContaining(documentXml: string, marker: string, replacement: string, fromIndex = 0) {
-  const markerIndex = documentXml.indexOf(marker, fromIndex);
+function replaceContentAfterTableThroughParagraphContaining(
+  documentXml: string,
+  marker: string,
+  replacement: string
+) {
+  const tableEnd = documentXml.indexOf("</w:tbl>");
+  if (tableEnd < 0) throw new Error("No se encontró la tabla de resultados en la plantilla.");
+
+  const markerIndex = documentXml.indexOf(marker, tableEnd);
   if (markerIndex < 0) throw new Error(`No se encontró el marcador "${marker}" en la plantilla.`);
-  const attributedStart = documentXml.lastIndexOf("<w:p ", markerIndex);
-  const plainStart = documentXml.lastIndexOf("<w:p>", markerIndex);
-  const start = Math.max(attributedStart, plainStart);
-  const end = documentXml.indexOf("</w:p>", markerIndex);
-  if (start < 0 || end < 0) throw new Error(`No se pudo localizar el párrafo de "${marker}".`);
-  return `${documentXml.slice(0, start)}${replacement}${documentXml.slice(end + 6)}`;
+  const markerEnd = documentXml.indexOf("</w:p>", markerIndex);
+  if (markerEnd < 0) throw new Error(`No se pudo localizar el párrafo de "${marker}".`);
+
+  const insertionPoint = tableEnd + "</w:tbl>".length;
+  return `${documentXml.slice(0, insertionPoint)}${replacement}${documentXml.slice(markerEnd + 6)}`;
 }
 
 function textBoxContent(data: TeacherEvaluationTemplateData) {
@@ -139,20 +145,18 @@ export function populateTeacherEvaluationTemplate(documentXml: string, data: Tea
   let output = documentXml.replace(rowPattern, () => nextRows[rowIndex++]);
   output = output.replace(/<w:txbxContent>[\s\S]*?<\/w:txbxContent>/g, textBoxContent(data));
 
-  output = replaceParagraphContaining(output, "TOTAL", "<w:p/>", output.indexOf("</w:tbl>"));
   const commentItems = data.comments.map(cleanText).filter(Boolean);
   const commentsXml = [
-    paragraph("COMENTARIOS DE LOS ESTUDIANTES", { bold: true, pageBreakBefore: true }),
+    paragraph("COMENTARIOS DE LOS ESTUDIANTES", { bold: true }),
     paragraph(`Evaluaciones recibidas: ${data.responseCount}. Comentarios presentados de forma anónima.`),
     ...(commentItems.length
       ? commentItems.map((comment, index) => paragraph(`${index + 1}. ${comment}`))
       : [paragraph("No se recibieron comentarios abiertos en esta evaluación semestral.")])
   ].join("");
-  output = replaceParagraphContaining(
+  output = replaceContentAfterTableThroughParagraphContaining(
     output,
     "Sus comentarios son positivos y sugerencias son valiosas para la institución",
-    commentsXml,
-    output.indexOf("</w:tbl>")
+    commentsXml
   );
 
   return output;
