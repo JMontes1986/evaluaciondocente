@@ -8,6 +8,10 @@ test("protege el módulo de seguridad como área SUPER_ADMIN", () => {
   assert.equal(moduleForPathname("/administracion/seguridad/detalle"), "super_admin");
 });
 
+test("protege el análisis individual con el permiso de resultados docentes", () => {
+  assert.equal(moduleForPathname("/api/ai/teacher-analysis"), "resultados_docentes");
+});
+
 test("inventaría todas las áreas y conserva identificadores únicos", () => {
   const measures = getSecurityMeasures({ groqConfigured: false });
   assert.ok(measures.length >= 25);

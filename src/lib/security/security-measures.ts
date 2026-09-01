@@ -234,7 +234,7 @@ export function getSecurityMeasures({ groqConfigured }: { groqConfigured: boolea
       title: "Acceso directivo al análisis con IA",
       description: "El endpoint de Groq solo admite SUPER_ADMIN, ADMIN, RECTOR, DIRECTIVO y COORDINADOR.",
       status: "active",
-      evidence: "Validación de rol en dashboard-analysis"
+      evidence: "Validación de rol en dashboard-analysis y teacher-analysis"
     },
     {
       id: "groq-pseudonymization",
@@ -242,7 +242,7 @@ export function getSecurityMeasures({ groqConfigured }: { groqConfigured: boolea
       title: "Seudonimización antes de Groq",
       description: "Los nombres docentes se sustituyen por alias efímeros y no se envían UUID, correos, comentarios ni identidades estudiantiles.",
       status: "active",
-      evidence: "dashboard-analysis-prompt.ts"
+      evidence: "dashboard-analysis-prompt.ts y teacher-analysis-prompt.ts"
     },
     {
       id: "groq-secret",

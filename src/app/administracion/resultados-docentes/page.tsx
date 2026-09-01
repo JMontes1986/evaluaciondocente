@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { Download } from "lucide-react";
 import { QuestionAverageChart, ScoreDistributionChart } from "@/components/admin/dashboard-charts";
+import { AiDecisionAnalysis } from "@/components/admin/ai-decision-analysis";
 import { PageHeading } from "@/components/admin/page-heading";
 import { QuestionDistributionChart } from "@/components/admin/teacher-results-charts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatScore, formatScorePercentage } from "@/lib/calculations/scores";
+import { DEFAULT_GROQ_MODEL } from "@/lib/ai/groq-models";
+import { canUseExternalAiAnalysis } from "@/lib/auth/dashboard-scope";
+import { requireModule } from "@/lib/auth/permissions";
 import { getTeacherResults } from "@/lib/services/teacher-results-service";
 
 export const metadata = { title: "Resultados por docente" };
@@ -30,7 +34,10 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
   const params = await searchParams;
   const teacherId = uuidPattern.test(params.docente ?? "") ? params.docente : undefined;
   const periodId = uuidPattern.test(params.evaluacion ?? "") ? params.evaluacion : undefined;
-  const data = await getTeacherResults({ teacherId, periodId });
+  const [data, identity] = await Promise.all([
+    getTeacherResults({ teacherId, periodId }),
+    requireModule("resultados_docentes")
+  ]);
   const report = data.report;
   const questionChartData = report?.questions.map((question) => ({
     id: question.id,
@@ -153,6 +160,18 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
               tone="strength"
             />
           </section>
+
+          {canUseExternalAiAnalysis(identity.role) ? (
+            <AiDecisionAnalysis
+              key={`${data.period?.id}:${data.teacher?.id}:teacher`}
+              configured={Boolean(process.env.GROQ_API_KEY)}
+              canAnalyze={Boolean(report.available && report.questions.length)}
+              periodId={data.period?.id}
+              teacherId={data.teacher?.id}
+              model={process.env.GROQ_MODEL ?? DEFAULT_GROQ_MODEL}
+              mode="teacher"
+            />
+          ) : null}
 
           <div className="mt-6 grid gap-6 xl:grid-cols-[1.35fr_.65fr]">
             <ChartSection

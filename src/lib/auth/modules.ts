@@ -49,5 +49,6 @@ export function moduleForPathname(pathname: string): AdminModuleKey | "super_adm
   if (pathname.startsWith("/administracion/importaciones")) return "importaciones";
   if (pathname.startsWith("/api/exports")) return "informes";
   if (pathname.startsWith("/api/ai/dashboard-analysis")) return "dashboard";
+  if (pathname.startsWith("/api/ai/teacher-analysis")) return "resultados_docentes";
   return null;
 }

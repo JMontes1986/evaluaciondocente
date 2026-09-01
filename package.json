@@ -8,8 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/core.test.ts tests/csp.test.ts tests/csv-import.test.ts tests/dashboard-analysis-prompt.test.ts tests/dashboard-scope.test.ts tests/groq-dashboard-client.test.ts tests/password-recovery.test.ts tests/security-measures.test.ts tests/teacher-evaluation-template.test.ts tests/xlsx-security.test.ts",
-    "test:watch": "tsx --test --watch tests/core.test.ts tests/csp.test.ts tests/csv-import.test.ts tests/dashboard-analysis-prompt.test.ts tests/dashboard-scope.test.ts tests/groq-dashboard-client.test.ts tests/password-recovery.test.ts tests/security-measures.test.ts tests/teacher-evaluation-template.test.ts tests/xlsx-security.test.ts"
+    "test": "tsx --test tests/core.test.ts tests/csp.test.ts tests/csv-import.test.ts tests/dashboard-analysis-prompt.test.ts tests/teacher-analysis-prompt.test.ts tests/dashboard-scope.test.ts tests/groq-dashboard-client.test.ts tests/password-recovery.test.ts tests/security-measures.test.ts tests/teacher-evaluation-template.test.ts tests/xlsx-security.test.ts",
+    "test:watch": "tsx --test --watch tests/core.test.ts tests/csp.test.ts tests/csv-import.test.ts tests/dashboard-analysis-prompt.test.ts tests/teacher-analysis-prompt.test.ts tests/dashboard-scope.test.ts tests/groq-dashboard-client.test.ts tests/password-recovery.test.ts tests/security-measures.test.ts tests/teacher-evaluation-template.test.ts tests/xlsx-security.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -34,7 +34,9 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.63.0",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.2.1",
+    "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "zod": "^4.1.11"

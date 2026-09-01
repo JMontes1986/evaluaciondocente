@@ -28,15 +28,16 @@ interface GenerateGroqDashboardAnalysisOptions {
   model?: string;
   prompt: string;
   fallbackPrompt?: string;
+  maxCompletionTokens?: number;
   fetcher?: typeof fetch;
 }
 
-function requestBody(model: string, prompt: string) {
+function requestBody(model: string, prompt: string, maxCompletionTokens: number) {
   const body: Record<string, unknown> = {
     model,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.6,
-    max_completion_tokens: 2200,
+    max_completion_tokens: maxCompletionTokens,
     top_p: 0.8,
     stream: false
   };
@@ -99,6 +100,7 @@ export async function generateGroqDashboardAnalysis({
   model,
   prompt,
   fallbackPrompt,
+  maxCompletionTokens = 2200,
   fetcher = fetch
 }: GenerateGroqDashboardAnalysisOptions) {
   const primaryModel = model?.trim() || DEFAULT_GROQ_MODEL;
@@ -124,7 +126,7 @@ export async function generateGroqDashboardAnalysis({
             "Authorization": `Bearer ${apiKey}`,
             "Content-Type": "application/json"
           },
-          body: JSON.stringify(requestBody(attemptedModel, attemptedPrompt)),
+          body: JSON.stringify(requestBody(attemptedModel, attemptedPrompt, maxCompletionTokens)),
           signal: AbortSignal.timeout(requestAttempt === 1 ? 35_000 : 18_000)
         });
       } catch (caught) {

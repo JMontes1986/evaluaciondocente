@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, RefreshCw, Sparkles, Square } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { groqModelLabel } from "@/lib/ai/groq-models";
 
@@ -12,6 +14,7 @@ interface AiDecisionAnalysisProps {
   teacherId?: string;
   gradeId?: string;
   model: string;
+  mode?: "dashboard" | "teacher";
 }
 
 export function AiDecisionAnalysis({
@@ -20,7 +23,8 @@ export function AiDecisionAnalysis({
   periodId,
   teacherId,
   gradeId,
-  model
+  model,
+  mode = "dashboard"
 }: AiDecisionAnalysisProps) {
   const [analysis, setAnalysis] = useState("");
   const [error, setError] = useState("");
@@ -40,12 +44,15 @@ export function AiDecisionAnalysis({
     controllerRef.current = controller;
 
     try {
-      const response = await fetch("/api/ai/dashboard-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ periodId, teacherId, gradeId }),
-        signal: controller.signal
-      });
+      const response = await fetch(
+        mode === "teacher" ? "/api/ai/teacher-analysis" : "/api/ai/dashboard-analysis",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ periodId, teacherId, gradeId }),
+          signal: controller.signal
+        }
+      );
       const payload = await response.json().catch(() => null) as {
         analysis?: string;
         error?: string;
@@ -76,18 +83,23 @@ export function AiDecisionAnalysis({
         setLoading(false);
       }
     }
-  }, [gradeId, periodId, teacherId]);
+  }, [gradeId, mode, periodId, teacherId]);
 
-  useEffect(() => {
-    return () => controllerRef.current?.abort();
-  }, []);
+  useEffect(() => () => controllerRef.current?.abort(), []);
+
+  const title = mode === "teacher"
+    ? "Análisis generativo del docente con Groq"
+    : "Análisis asistido con Groq";
+  const description = mode === "teacher"
+    ? `${groqModelLabel(activeModel)} analiza las 23 preguntas, sus distribuciones y los patrones pedagógicos para crear un informe individual completo. No se envían nombres, correos, identificadores ni comentarios.`
+    : `${groqModelLabel(activeModel)} procesa externamente indicadores agregados. Los docentes se envían con alias, sin nombres ni identificadores internos.`;
 
   return (
     <section className="mt-6 overflow-hidden rounded-xl border border-primary/20 bg-card">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b bg-primary/[.04] p-5 sm:p-6">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-semibold">
-            <Bot className="size-5 text-primary" />Análisis asistido con Groq
+            <Bot className="size-5 text-primary" />{title}
             {configured && canAnalyze && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-800">
                 <span className="size-1.5 animate-pulse rounded-full bg-emerald-600" />En vivo
@@ -95,7 +107,7 @@ export function AiDecisionAnalysis({
             )}
           </h2>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            {groqModelLabel(activeModel)} procesa externamente indicadores agregados. Los docentes se envían con alias, sin nombres ni identificadores internos.
+            {description}
           </p>
         </div>
         {loading ? (
@@ -121,17 +133,57 @@ export function AiDecisionAnalysis({
         </p>
       )}
       {loading && !analysis && (
-        <p className="m-5 animate-pulse text-sm text-muted-foreground sm:m-6">Groq está analizando los resultados…</p>
+        <p className="m-5 animate-pulse text-sm text-muted-foreground sm:m-6">
+          {mode === "teacher"
+            ? "Groq está elaborando el informe pedagógico completo…"
+            : "Groq está analizando los resultados…"}
+        </p>
       )}
       {error && <p role="alert" className="m-5 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive sm:m-6">{error}</p>}
       {analysis && (
         <div className="p-5 sm:p-6">
-          <div className="whitespace-pre-wrap text-sm leading-7 text-foreground">{analysis}</div>
+          <AnalysisMarkdown content={analysis} />
           <p className="mt-6 border-t pt-4 text-xs text-muted-foreground">
             El contenido generado por IA es una recomendación de apoyo y debe validarse con el contexto académico institucional.
           </p>
         </div>
       )}
     </section>
+  );
+}
+
+function AnalysisMarkdown({ content }: { content: string }) {
+  return (
+    <div className="max-w-none text-[15px] leading-7 text-foreground">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ children }) => <h3 className="mt-9 border-b pb-3 text-2xl font-semibold tracking-tight first:mt-0">{children}</h3>,
+          h2: ({ children }) => <h3 className="mt-9 border-b pb-2 text-xl font-semibold tracking-tight first:mt-0">{children}</h3>,
+          h3: ({ children }) => <h4 className="mt-7 text-lg font-semibold tracking-tight">{children}</h4>,
+          p: ({ children }) => <p className="my-4 leading-7">{children}</p>,
+          strong: ({ children }) => <strong className="font-semibold text-primary">{children}</strong>,
+          ul: ({ children }) => <ul className="my-4 list-disc space-y-2 pl-6 marker:text-primary">{children}</ul>,
+          ol: ({ children }) => <ol className="my-4 list-decimal space-y-2 pl-6 marker:font-semibold marker:text-primary">{children}</ol>,
+          li: ({ children }) => <li className="pl-1 leading-7">{children}</li>,
+          blockquote: ({ children }) => (
+            <blockquote className="my-6 rounded-r-lg border-l-4 border-primary bg-primary/[.05] px-5 py-2 font-medium italic">
+              {children}
+            </blockquote>
+          ),
+          hr: () => <hr className="my-8 border-border" />,
+          table: ({ children }) => (
+            <div className="my-6 overflow-x-auto rounded-lg border">
+              <table className="w-full min-w-[620px] border-collapse text-sm">{children}</table>
+            </div>
+          ),
+          thead: ({ children }) => <thead className="bg-secondary/70 text-left">{children}</thead>,
+          th: ({ children }) => <th className="border-b px-4 py-3 font-semibold">{children}</th>,
+          td: ({ children }) => <td className="border-b px-4 py-3 align-top last:text-left">{children}</td>
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }

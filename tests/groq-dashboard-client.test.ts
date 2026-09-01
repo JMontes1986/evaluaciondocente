@@ -29,6 +29,24 @@ test("usa el modelo estable sin parámetros de razonamiento incompatibles", asyn
   assert.equal(requestBody?.reasoning_effort, undefined);
 });
 
+test("permite ampliar la respuesta para el informe individual completo", async () => {
+  let completionLimit: number | undefined;
+  const fetcher = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body)) as { max_completion_tokens: number };
+    completionLimit = body.max_completion_tokens;
+    return completion("Informe individual completo");
+  }) as typeof fetch;
+
+  await generateGroqDashboardAnalysis({
+    apiKey: "test-key",
+    prompt: "Datos individuales agregados",
+    maxCompletionTokens: 5200,
+    fetcher
+  });
+
+  assert.equal(completionLimit, 5200);
+});
+
 test("cambia al modelo estable cuando el modelo configurado no está disponible", async () => {
   const models: string[] = [];
   const fetcher = (async (_input: RequestInfo | URL, init?: RequestInit) => {
