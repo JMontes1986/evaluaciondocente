@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatScore, formatScorePercentage } from "@/lib/calculations/scores";
 import { DEFAULT_GROQ_MODEL } from "@/lib/ai/groq-models";
-import { canUseExternalAiAnalysis } from "@/lib/auth/dashboard-scope";
+import { canUseTeacherAiAnalysis } from "@/lib/auth/dashboard-scope";
 import { requireModule } from "@/lib/auth/permissions";
 import { getTeacherResults } from "@/lib/services/teacher-results-service";
 
@@ -161,7 +161,7 @@ export default async function TeacherResultsPage({ searchParams }: TeacherResult
             />
           </section>
 
-          {canUseExternalAiAnalysis(identity.role) ? (
+          {canUseTeacherAiAnalysis(identity.role, identity.email) ? (
             <AiDecisionAnalysis
               key={`${data.period?.id}:${data.teacher?.id}:teacher`}
               configured={Boolean(process.env.GROQ_API_KEY)}

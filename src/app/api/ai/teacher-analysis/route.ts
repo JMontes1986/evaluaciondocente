@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { buildTeacherAnalysisPrompt } from "@/lib/ai/teacher-analysis-prompt";
 import { generateGroqDashboardAnalysis, GroqDashboardError } from "@/lib/ai/groq-dashboard";
-import { canUseExternalAiAnalysis } from "@/lib/auth/dashboard-scope";
+import { canUseTeacherAiAnalysis } from "@/lib/auth/dashboard-scope";
 import { requireModule } from "@/lib/auth/permissions";
 import { adminAiRateLimiter } from "@/lib/security/rate-limit";
 import { getTeacherResults } from "@/lib/services/teacher-results-service";
@@ -16,9 +16,9 @@ const requestSchema = z.object({
 
 export async function POST(request: Request) {
   const adminUser = await requireModule("resultados_docentes");
-  if (!canUseExternalAiAnalysis(adminUser.role)) {
+  if (!canUseTeacherAiAnalysis(adminUser.role, adminUser.email)) {
     return Response.json(
-      { error: "El análisis asistido está disponible únicamente para roles directivos." },
+      { error: "La cuenta no está autorizada para generar el análisis individual con Groq." },
       { status: 403 }
     );
   }

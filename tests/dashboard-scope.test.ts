@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   canUseExternalAiAnalysis,
+  canUseTeacherAiAnalysis,
   DashboardScopeError,
   limitDashboardGrade,
   scopeDashboardFilters
@@ -12,6 +13,18 @@ test("limita el análisis externo a roles directivos", () => {
     assert.equal(canUseExternalAiAnalysis(role), true);
   }
   assert.equal(canUseExternalAiAnalysis("DOCENTE"), false);
+});
+
+test("autoriza el análisis individual a las tres cuentas institucionales indicadas", () => {
+  for (const email of [
+    "convivencia@colgemelli.edu.co",
+    "gformativa@colgemelli.edu.co",
+    "ghumana@colgemelli.edu.co"
+  ]) {
+    assert.equal(canUseTeacherAiAnalysis("DOCENTE", email), true);
+  }
+  assert.equal(canUseTeacherAiAnalysis("DOCENTE", "otro@colgemelli.edu.co"), false);
+  assert.equal(canUseTeacherAiAnalysis("RECTOR", "rectoria@colgemelli.edu.co"), true);
 });
 
 const ownTeacherId = "8dfec899-c886-48ee-af46-f419dde7ec6d";

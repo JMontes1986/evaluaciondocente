@@ -8,8 +8,19 @@ const EXTERNAL_AI_DIRECTIVE_ROLES: readonly AppRole[] = [
   "COORDINADOR"
 ];
 
+const TEACHER_AI_AUTHORIZED_EMAILS = new Set([
+  "convivencia@colgemelli.edu.co",
+  "gformativa@colgemelli.edu.co",
+  "ghumana@colgemelli.edu.co"
+]);
+
 export function canUseExternalAiAnalysis(role: AppRole) {
   return EXTERNAL_AI_DIRECTIVE_ROLES.includes(role);
+}
+
+export function canUseTeacherAiAnalysis(role: AppRole, email: string) {
+  return canUseExternalAiAnalysis(role)
+    || TEACHER_AI_AUTHORIZED_EMAILS.has(email.trim().toLowerCase());
 }
 
 export interface DashboardFilterInput {

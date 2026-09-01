@@ -231,10 +231,10 @@ export function getSecurityMeasures({ groqConfigured }: { groqConfigured: boolea
     {
       id: "groq-access",
       category: "Servicios externos",
-      title: "Acceso directivo al análisis con IA",
-      description: "El endpoint de Groq solo admite SUPER_ADMIN, ADMIN, RECTOR, DIRECTIVO y COORDINADOR.",
+      title: "Acceso controlado al análisis con IA",
+      description: "El análisis institucional admite roles directivos; el informe individual también autoriza tres cuentas institucionales definidas expresamente.",
       status: "active",
-      evidence: "Validación de rol en dashboard-analysis y teacher-analysis"
+      evidence: "Validación de rol y cuenta en dashboard-scope, dashboard-analysis y teacher-analysis"
     },
     {
       id: "groq-pseudonymization",
