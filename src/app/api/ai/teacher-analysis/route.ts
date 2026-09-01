@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { buildTeacherAnalysisPrompt } from "@/lib/ai/teacher-analysis-prompt";
+import {
+  buildTeacherAnalysisPrompt,
+  personalizeTeacherAnalysis
+} from "@/lib/ai/teacher-analysis-prompt";
 import { generateGroqDashboardAnalysis, GroqDashboardError } from "@/lib/ai/groq-dashboard";
 import { canUseTeacherAiAnalysis } from "@/lib/auth/dashboard-scope";
 import { requireModule } from "@/lib/auth/permissions";
@@ -102,7 +105,8 @@ export async function POST(request: Request) {
     }
   });
 
-  return Response.json({ analysis: result.analysis, model: result.model }, {
+  const personalizedAnalysis = personalizeTeacherAnalysis(result.analysis, data.teacher.full_name);
+  return Response.json({ analysis: personalizedAnalysis, model: result.model }, {
     headers: {
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff"

@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildTeacherAnalysisPrompt } from "../src/lib/ai/teacher-analysis-prompt";
+import {
+  buildTeacherAnalysisPrompt,
+  personalizeTeacherAnalysis
+} from "../src/lib/ai/teacher-analysis-prompt";
 
 test("construye un análisis docente profundo, cuantitativo y anonimizado", () => {
   const prompt = buildTeacherAnalysisPrompt({
@@ -29,5 +32,21 @@ test("construye un análisis docente profundo, cuantitativo y anonimizado", () =
   assert.match(prompt, /p:\s+80[,.]5/);
   assert.match(prompt, /nunca:\s+43[,.]5/);
   assert.match(prompt, /comentarios_no_enviados:\s+34/);
+  assert.match(prompt, /DOCENTE_EVALUADO/);
   assert.doesNotMatch(prompt, /nombre del docente|correo institucional|teacher_id/i);
+});
+
+test("muestra el nombre real solo después de recibir el análisis de Groq", () => {
+  const analysis = [
+    "**DOCENTE_EVALUADO** presenta fortalezas.",
+    "El acompañamiento a la persona docente debe continuar.",
+    "La planeación del docente evaluado es consistente."
+  ].join("\n");
+
+  const personalized = personalizeTeacherAnalysis(analysis, "Cindy Arboleda Lara");
+
+  assert.match(personalized, /\*\*Cindy Arboleda Lara\*\*/);
+  assert.match(personalized, /a Cindy Arboleda Lara/);
+  assert.match(personalized, /de Cindy Arboleda Lara/);
+  assert.doesNotMatch(personalized, /DOCENTE_EVALUADO|persona docente|docente evaluado/i);
 });
