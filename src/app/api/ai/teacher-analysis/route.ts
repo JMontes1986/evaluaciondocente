@@ -63,7 +63,6 @@ export async function POST(request: Request) {
     periodName: data.period.name,
     privacyThreshold: data.minResponses,
     responseCount: data.report.responseCount,
-    average: data.report.average,
     commentCount: data.report.comments.length,
     questions: data.report.questions
   });
