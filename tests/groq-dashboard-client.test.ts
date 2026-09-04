@@ -31,7 +31,7 @@ test("usa el modelo estable sin parámetros de razonamiento incompatibles", asyn
   assert.equal(requestBody?.reasoning_effort, undefined);
 });
 
-test("limita la respuesta individual por debajo de la cuota OTPM", async () => {
+test("permite ampliar la respuesta para el informe individual completo", async () => {
   let completionLimit: number | undefined;
   const fetcher = (async (_input: RequestInfo | URL, init?: RequestInit) => {
     const body = JSON.parse(String(init?.body)) as { max_completion_tokens: number };
@@ -42,11 +42,11 @@ test("limita la respuesta individual por debajo de la cuota OTPM", async () => {
   await generateGroqDashboardAnalysis({
     apiKey: "test-key",
     prompt: "Datos individuales agregados",
-    maxCompletionTokens: 900,
+    maxCompletionTokens: 5200,
     fetcher
   });
 
-  assert.equal(completionLimit, 900);
+  assert.equal(completionLimit, 5200);
 });
 
 test("cambia al modelo estable cuando el modelo configurado no está disponible", async () => {
@@ -82,6 +82,29 @@ test("conserva el límite de Groq como respuesta 429", async () => {
       && caught.status === 429
       && caught.retryAfterSeconds === 12
   );
+});
+
+test("cambia al modelo alternativo cuando el modelo configurado alcanza su cuota", async () => {
+  const models: string[] = [];
+  const fetcher = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+    const body = JSON.parse(String(init?.body)) as { model: string };
+    models.push(body.model);
+    return body.model.startsWith("qwen/")
+      ? Response.json({ error: { message: "Output tokens per minute exceeded" } }, { status: 429 })
+      : completion("Informe narrativo completo");
+  }) as typeof fetch;
+
+  const result = await generateGroqDashboardAnalysis({
+    apiKey: "test-key",
+    model: "qwen/qwen3.6-27b",
+    prompt: "Datos individuales agregados",
+    maxCompletionTokens: 5200,
+    fetcher
+  });
+
+  assert.deepEqual(models, ["qwen/qwen3.6-27b", "llama-3.3-70b-versatile"]);
+  assert.equal(result.analysis, "Informe narrativo completo");
+  assert.equal(result.model, "llama-3.3-70b-versatile");
 });
 
 test("reintenta con el informe compacto cuando Groq responde 413", async () => {

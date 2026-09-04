@@ -39,18 +39,18 @@ function instructions() {
     "No conviertas diferencias pequeñas en problemas. Prioriza concentraciones relevantes en NUNCA o ALGUNAS VECES, contrastes entre las cuatro respuestas y patrones coherentes.",
     "Reconoce las fortalezas antes de proponer mejoras y evita un tono punitivo. Las acciones deben ser concretas, pedagógicas y verificables.",
     "No analices el contenido de comentarios abiertos: solo se suministra su cantidad y estos no se envían al modelo por privacidad.",
-    "Responde exclusivamente en TOON válido, sin Markdown, sin bloque de código y sin texto antes o después del objeto TOON.",
-    "Sé compacto: máximo 500 palabras, evita repeticiones y limita cada campo textual a una sola línea de hasta 18 palabras.",
-    "No uses comas dentro de los campos textuales; usa punto y coma si necesitas separar ideas para conservar el TOON válido.",
-    "Usa exactamente este contrato y estas cantidades; las llaves son literales:",
-    "apertura[2]: dos párrafos breves de diagnóstico integral",
-    "lectura[4]{respuesta,pct,lectura}: una fila para SIEMPRE, CASI SIEMPRE, ALGUNAS VECES y NUNCA; pct es numérico",
-    "hallazgos[6]{titulo,evidencia,lectura,accion}: seis hallazgos priorizados con cifras y códigos de pregunta",
-    "prioridades[4]{indicador,distribucion,motivo,accion}: cuatro prioridades; distribucion resume por separado las cuatro respuestas",
-    "perfil: síntesis equilibrada sin etiquetar ni diagnosticar",
-    "metas[3]{meta,indicador}: propuestas institucionales medibles por acordar, no metas históricas",
-    "conclusion: foco del acompañamiento y fortalezas que deben preservarse",
-    "No copies las 23 filas de datos ni cierres ofreciendo servicios adicionales."
+    "Responde en Markdown bien estructurado, sin bloque de código, con párrafos sustantivos, negritas, listas, tablas y citas cuando mejoren la lectura.",
+    "Desarrolla un informe completo de aproximadamente 1.600 a 2.500 palabras. Evita repeticiones y frases genéricas.",
+    "Usa esta estructura adaptable a la evidencia disponible:",
+    "- Apertura: diagnóstico integral en dos párrafos basado en la distribución global de las cuatro respuestas y sus matices.",
+    "- Lectura ejecutiva: tabla con SIEMPRE, CASI SIEMPRE, ALGUNAS VECES y NUNCA. No incluyas ninguna fila adicional calculada o agrupada.",
+    "- Hallazgos numerados: desarrolla entre 8 y 12 apartados. Incluye las principales alertas, fortalezas, patrones, contrastes pedagógicos y coherencia entre indicadores.",
+    "- En cada hallazgo relevante incluye evidencia numérica, lectura pedagógica y una acción concreta; cita el código y texto resumido de la pregunta.",
+    "- Ranking inteligente de intervención: tabla de 4 a 6 prioridades con indicador, los cuatro porcentajes de respuesta, motivo y acción.",
+    "- Perfil pedagógico: síntesis equilibrada en una cita destacada, sin etiquetar ni diagnosticar a la persona.",
+    "- Metas sugeridas para el siguiente periodo: 3 a 5 metas medibles. Indica expresamente que son propuestas institucionales por acordar, no metas históricas.",
+    "- Conclusión institucional: explica dónde concentrar el acompañamiento y qué fortalezas conviene preservar.",
+    "No copies las 23 filas de datos ni cierres ofreciendo servicios adicionales. Entrega directamente el informe."
   ].join("\n");
 }
 

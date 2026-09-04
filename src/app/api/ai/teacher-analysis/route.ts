@@ -4,7 +4,6 @@ import {
   personalizeTeacherAnalysis
 } from "@/lib/ai/teacher-analysis-prompt";
 import { generateGroqDashboardAnalysis, GroqDashboardError } from "@/lib/ai/groq-dashboard";
-import { renderTeacherAnalysisResponse } from "@/lib/ai/toon-analysis-response";
 import { canUseTeacherAiAnalysis } from "@/lib/auth/dashboard-scope";
 import { requireModule } from "@/lib/auth/permissions";
 import { adminAiRateLimiter } from "@/lib/security/rate-limit";
@@ -74,7 +73,7 @@ export async function POST(request: Request) {
       apiKey,
       model: process.env.GROQ_MODEL,
       prompt,
-      maxCompletionTokens: 900
+      maxCompletionTokens: 5200
     });
   } catch (caught) {
     if (caught instanceof GroqDashboardError) {
@@ -108,8 +107,7 @@ export async function POST(request: Request) {
     }
   });
 
-  const markdownAnalysis = renderTeacherAnalysisResponse(result.analysis);
-  const personalizedAnalysis = personalizeTeacherAnalysis(markdownAnalysis, data.teacher.full_name);
+  const personalizedAnalysis = personalizeTeacherAnalysis(result.analysis, data.teacher.full_name);
   return Response.json({ analysis: personalizedAnalysis, model: result.model }, {
     headers: {
       "Cache-Control": "no-store",

@@ -24,10 +24,9 @@ test("construye un análisis docente profundo, cuantitativo y anonimizado", () =
     }]
   });
 
-  assert.match(prompt, /exclusivamente en TOON válido/);
-  assert.match(prompt, /máximo 500 palabras/);
-  assert.match(prompt, /hallazgos\[6\]\{titulo,evidencia,lectura,accion\}/);
-  assert.match(prompt, /metas\[3\]\{meta,indicador\}/);
+  assert.match(prompt, /1\.600 a 2\.500 palabras/);
+  assert.match(prompt, /Ranking inteligente de intervención/);
+  assert.match(prompt, /Metas sugeridas para el siguiente periodo/);
   assert.match(prompt, /exclusivamente cuatro respuestas/i);
   assert.match(prompt, /SIEMPRE, CASI SIEMPRE, ALGUNAS VECES y NUNCA/);
   assert.match(prompt, /nunca:\s+43[,.]5/);

@@ -116,13 +116,11 @@ export async function generateGroqDashboardAnalysis({
     ? [prompt, fallbackPrompt]
     : [prompt];
   let lastError: GroqDashboardError | null = null;
-  let requestAttempt = 0;
 
   for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
-    const attemptedModel = models[modelIndex];
+      const attemptedModel = models[modelIndex];
     for (let promptIndex = 0; promptIndex < prompts.length; promptIndex += 1) {
       const attemptedPrompt = prompts[promptIndex];
-      requestAttempt += 1;
       let response: Response;
       try {
         response = await fetcher("https://api.groq.com/openai/v1/chat/completions", {
@@ -132,7 +130,7 @@ export async function generateGroqDashboardAnalysis({
             "Content-Type": "application/json"
           },
           body: JSON.stringify(requestBody(attemptedModel, attemptedPrompt, maxCompletionTokens)),
-          signal: AbortSignal.timeout(requestAttempt === 1 ? 35_000 : 18_000)
+          signal: AbortSignal.timeout(35_000)
         });
       } catch (caught) {
         const detail = caught instanceof Error ? caught.message : "Network error";
@@ -155,7 +153,12 @@ export async function generateGroqDashboardAnalysis({
           if (nextModel && nextModel !== attemptedModel) break;
           throw error;
         }
-        if (response.status === 401 || response.status === 429) throw error;
+        if (response.status === 429) {
+          const nextModel = models[modelIndex + 1];
+          if (nextModel && nextModel !== attemptedModel) break;
+          throw error;
+        }
+        if (response.status === 401) throw error;
         if (modelIndex + 1 < models.length && retryableStatuses.has(response.status)) break;
         throw error;
       }
