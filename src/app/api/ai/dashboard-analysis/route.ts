@@ -6,6 +6,7 @@ import { adminAiRateLimiter } from "@/lib/security/rate-limit";
 import { getDashboardData } from "@/lib/services/analytics-service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { canUseExternalAiAnalysis, DashboardScopeError } from "@/lib/auth/dashboard-scope";
+import { renderDashboardAnalysisResponse } from "@/lib/ai/toon-analysis-response";
 
 export const maxDuration = 60;
 
@@ -78,7 +79,8 @@ export async function POST(request: Request) {
       apiKey,
       model: requestedModel,
       prompt,
-      fallbackPrompt
+      fallbackPrompt,
+      maxCompletionTokens: 900
     });
   } catch (caught) {
     if (caught instanceof GroqDashboardError) {
@@ -106,13 +108,16 @@ export async function POST(request: Request) {
       requested_model: requestedModel ?? null,
       prompt_characters: prompt.length,
       compact_prompt_characters: fallbackPrompt.length,
+      prompt_tokens: result.usage?.promptTokens ?? null,
+      completion_tokens: result.usage?.completionTokens ?? null,
+      total_tokens: result.usage?.totalTokens ?? null,
       teacher_filter: data.filters.teacherId ?? null,
       grade_filter: data.filters.gradeId ?? null,
       evaluations: data.metrics.evaluations
     }
   });
 
-  return Response.json({ analysis: result.analysis, model: result.model }, {
+  return Response.json({ analysis: renderDashboardAnalysisResponse(result.analysis), model: result.model }, {
     headers: {
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff"

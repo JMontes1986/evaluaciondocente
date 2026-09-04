@@ -5,7 +5,12 @@ const completionSchema = z.object({
   choices: z.array(z.object({
     message: z.object({ content: z.string().nullable().optional() }),
     finish_reason: z.string().nullable().optional()
-  })).min(1)
+  })).min(1),
+  usage: z.object({
+    prompt_tokens: z.number().int().nonnegative().optional(),
+    completion_tokens: z.number().int().nonnegative().optional(),
+    total_tokens: z.number().int().nonnegative().optional()
+  }).optional()
 });
 
 const retryableStatuses = new Set([400, 403, 404, 422, 498, 500, 502, 503, 504]);
@@ -100,7 +105,7 @@ export async function generateGroqDashboardAnalysis({
   model,
   prompt,
   fallbackPrompt,
-  maxCompletionTokens = 2200,
+  maxCompletionTokens = 900,
   fetcher = fetch
 }: GenerateGroqDashboardAnalysisOptions) {
   const primaryModel = model?.trim() || DEFAULT_GROQ_MODEL;
@@ -159,10 +164,16 @@ export async function generateGroqDashboardAnalysis({
       const analysis = completion.success
         ? completion.data.choices[0].message.content?.trim()
         : undefined;
+      const usage = completion.success ? completion.data.usage : undefined;
       if (analysis) return {
         analysis,
         model: attemptedModel,
-        compacted: promptIndex > 0
+        compacted: promptIndex > 0,
+        usage: usage ? {
+          promptTokens: usage.prompt_tokens ?? null,
+          completionTokens: usage.completion_tokens ?? null,
+          totalTokens: usage.total_tokens ?? null
+        } : null
       };
 
       const finishReason = completion.success

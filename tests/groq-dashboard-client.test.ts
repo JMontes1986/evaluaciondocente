@@ -7,7 +7,8 @@ import {
 
 function completion(content: string) {
   return Response.json({
-    choices: [{ message: { content }, finish_reason: "stop" }]
+    choices: [{ message: { content }, finish_reason: "stop" }],
+    usage: { prompt_tokens: 210, completion_tokens: 90, total_tokens: 300 }
   });
 }
 
@@ -26,10 +27,11 @@ test("usa el modelo estable sin parámetros de razonamiento incompatibles", asyn
 
   assert.equal(result.model, "llama-3.3-70b-versatile");
   assert.equal(result.analysis, "Análisis generado");
+  assert.deepEqual(result.usage, { promptTokens: 210, completionTokens: 90, totalTokens: 300 });
   assert.equal(requestBody?.reasoning_effort, undefined);
 });
 
-test("permite ampliar la respuesta para el informe individual completo", async () => {
+test("limita la respuesta individual por debajo de la cuota OTPM", async () => {
   let completionLimit: number | undefined;
   const fetcher = (async (_input: RequestInfo | URL, init?: RequestInit) => {
     const body = JSON.parse(String(init?.body)) as { max_completion_tokens: number };
@@ -40,11 +42,11 @@ test("permite ampliar la respuesta para el informe individual completo", async (
   await generateGroqDashboardAnalysis({
     apiKey: "test-key",
     prompt: "Datos individuales agregados",
-    maxCompletionTokens: 5200,
+    maxCompletionTokens: 900,
     fetcher
   });
 
-  assert.equal(completionLimit, 5200);
+  assert.equal(completionLimit, 900);
 });
 
 test("cambia al modelo estable cuando el modelo configurado no está disponible", async () => {
@@ -90,7 +92,7 @@ test("reintenta con el informe compacto cuando Groq responde 413", async () => {
       max_completion_tokens: number;
     };
     prompts.push(body.messages[0].content);
-    assert.equal(body.max_completion_tokens, 2200);
+    assert.equal(body.max_completion_tokens, 900);
     return prompts.length === 1
       ? Response.json({ error: { message: "Request body is too large" } }, { status: 413 })
       : completion("Informe ejecutivo compacto");

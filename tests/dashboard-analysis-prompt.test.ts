@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildDashboardAnalysisPrompts } from "../src/lib/ai/dashboard-analysis-prompt";
+import { renderDashboardAnalysisResponse } from "../src/lib/ai/toon-analysis-response";
 
 test("construye un informe BI porcentual y limita las intersecciones", () => {
   const teacherGradePerformance = Array.from({ length: 40 }, (_, index) => ({
@@ -31,7 +32,8 @@ test("construye un informe BI porcentual y limita las intersecciones", () => {
   assert.match(prompt, /inteligencia de negocios/i);
   assert.match(prompt, /promedio_pct:\s+85[,.]5/);
   assert.match(prompt, /intersecciones_extremas\[24\s/);
-  assert.match(prompt, /PLAN 30\/60\/90 DÍAS/);
+  assert.match(prompt, /exclusivamente en TOON válido/);
+  assert.match(prompt, /plan\[3\]\{horizonte,accion,responsable,indicador,resultado\}/);
   assert.match(prompt, /Docente 01/);
   assert.doesNotMatch(prompt, /Ana Pérez/);
   assert.doesNotMatch(fallbackPrompt, /Ana Pérez/);
@@ -62,4 +64,31 @@ test("mantiene alias consistentes y no filtra nombres en las intersecciones", ()
     assert.match(output, /Docente 01/);
     assert.match(output, /Docente 02/);
   }
+});
+
+test("convierte la respuesta TOON ejecutiva a Markdown", () => {
+  const toon = [
+    "resumen[2]: Panorama estable,La variabilidad requiere seguimiento",
+    "decisiones[1]{titulo,evidencia,accion}:",
+    "  Priorizar P1,P1 tiene la menor distribución,Definir acompañamiento",
+    "kpi_variabilidad: El KPI global es consistente con la muestra",
+    "fortalezas[1]{hallazgo,evidencia,accion}:",
+    "  Planeación,P2 concentra respuestas favorables,Documentar práctica",
+    "alertas[1]{titulo,evidencia,validar,accion}:",
+    "  Brecha,P1 difiere entre grados,Representatividad,Revisar por grado",
+    "segmentos[1]{segmento,evidencia,accion}:",
+    "  Grado 9,Mayor dispersión,Acompañar",
+    "preguntas[1]{pregunta,distribucion,lectura,accion}:",
+    "  P1,S 40 CS 30 AV 20 N 10,Hay dispersión,Profundizar",
+    "plan[1]{horizonte,accion,responsable,indicador,resultado}:",
+    "  30 días,Revisar P1,Coordinación,Acta,Acuerdo inicial",
+    "limitaciones[2]: Muestra parcial,Falta comparación temporal",
+    "conclusion: Priorizar P1 sin perder las fortalezas"
+  ].join("\n");
+
+  const markdown = renderDashboardAnalysisResponse(toon);
+  assert.match(markdown, /## Resumen ejecutivo/);
+  assert.match(markdown, /### 1\. Priorizar P1/);
+  assert.match(markdown, /## Plan 30\/60\/90 días/);
+  assert.match(markdown, /\| 30 días \| Revisar P1 \|/);
 });

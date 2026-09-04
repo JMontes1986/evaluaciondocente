@@ -78,16 +78,21 @@ function instructions() {
     "Todos los indicadores p están en porcentaje (0 a 100) y n representa el tamaño de muestra. Compara porcentajes con una decimal y expresa diferencias como puntos porcentuales.",
     "Interpreta magnitud, dispersión, brechas, consistencia entre indicadores y tamaño de muestra. Distingue evidencia, hipótesis y causalidad; señala qué debe validarse cualitativamente.",
     "Evita generalidades, repeticiones y juicios personales. Cada hallazgo debe incluir evidencia numérica, implicación institucional y acción sugerida.",
-    "Entrega el informe con estos apartados, usando títulos claros y listas breves:",
-    "1. RESUMEN EJECUTIVO: lectura integral en 2 o 3 párrafos y las tres decisiones más importantes.",
-    "2. LECTURA DE KPI Y VARIABILIDAD: nivel global, brechas entre docentes, grados y preguntas, considerando n.",
-    "3. FORTALEZAS: patrones sólidos y prácticas que conviene documentar o transferir.",
-    "4. ALERTAS Y CAUSAS POR VALIDAR: prioridades ordenadas por impacto y urgencia, sin afirmar causalidad no demostrada.",
-    "5. SEGMENTACIÓN: docentes, grados e intersecciones relevantes; protege la confidencialidad y no elabores rankings punitivos.",
-    "6. PREGUNTAS CRÍTICAS: analiza la distribución de respuesta, no solo el promedio, e identifica polarización o concentración cuando exista.",
-    "7. PLAN 30/60/90 DÍAS: acción, responsable sugerido, indicador de seguimiento y resultado esperado medible para cada horizonte.",
-    "8. LIMITACIONES Y PRÓXIMOS ANÁLISIS: calidad de datos, representatividad y validaciones necesarias.",
-    "Cierra con una conclusión ejecutiva breve. No copies toda la tabla ni expliques el formato de entrada."
+    "Responde exclusivamente en TOON válido, sin Markdown, sin bloque de código y sin texto antes o después del objeto TOON.",
+    "Sé compacto: máximo 500 palabras, evita repeticiones y limita cada campo textual a una sola línea de hasta 18 palabras.",
+    "No uses comas dentro de los campos textuales; usa punto y coma si necesitas separar ideas para conservar el TOON válido.",
+    "Usa exactamente este contrato y estas cantidades; las llaves son literales:",
+    "resumen[2]: dos párrafos breves de lectura integral",
+    "decisiones[3]{titulo,evidencia,accion}: tres decisiones principales",
+    "kpi_variabilidad: nivel global y brechas considerando n",
+    "fortalezas[3]{hallazgo,evidencia,accion}: patrones sólidos que conviene transferir",
+    "alertas[4]{titulo,evidencia,validar,accion}: prioridades sin afirmar causalidad no demostrada",
+    "segmentos[3]{segmento,evidencia,accion}: docentes, grados o intersecciones relevantes sin rankings punitivos",
+    "preguntas[4]{pregunta,distribucion,lectura,accion}: distribución, polarización o concentración",
+    "plan[3]{horizonte,accion,responsable,indicador,resultado}: filas exactas para 30, 60 y 90 días",
+    "limitaciones[2]: representatividad y validaciones necesarias",
+    "conclusion: conclusión ejecutiva breve",
+    "No copies toda la tabla ni expliques el formato de entrada."
   ].join("\n");
 }
 
