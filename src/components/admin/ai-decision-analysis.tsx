@@ -17,6 +17,34 @@ interface AiDecisionAnalysisProps {
   mode?: "dashboard" | "teacher";
 }
 
+interface MarkdownNode {
+  type?: string;
+  value?: string;
+  children?: MarkdownNode[];
+}
+
+function normalizeAiLineBreaks(value: string) {
+  return value
+    .replace(/&lt;br\s*\/?&gt;/gi, "<br>")
+    .replace(/\\?<br\s*\/?>/gi, "<br>");
+}
+
+function remarkAiLineBreaks() {
+  return (tree: MarkdownNode) => {
+    const visit = (node: MarkdownNode) => {
+      if (!node.children) return;
+      node.children = node.children.map((child) => {
+        if (child.type === "html" && /^\s*<br\s*\/?>\s*$/i.test(child.value ?? "")) {
+          return { type: "break" };
+        }
+        visit(child);
+        return child;
+      });
+    };
+    visit(tree);
+  };
+}
+
 export function AiDecisionAnalysis({
   configured,
   canAnalyze,
@@ -153,10 +181,11 @@ export function AiDecisionAnalysis({
 }
 
 function AnalysisMarkdown({ content }: { content: string }) {
+  const normalizedContent = normalizeAiLineBreaks(content);
   return (
     <div className="max-w-none text-[15px] leading-7 text-foreground">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkAiLineBreaks]}
         components={{
           h1: ({ children }) => <h3 className="mt-9 border-b pb-3 text-2xl font-semibold tracking-tight first:mt-0">{children}</h3>,
           h2: ({ children }) => <h3 className="mt-9 border-b pb-2 text-xl font-semibold tracking-tight first:mt-0">{children}</h3>,
@@ -182,7 +211,7 @@ function AnalysisMarkdown({ content }: { content: string }) {
           td: ({ children }) => <td className="border-b px-4 py-3 align-top last:text-left">{children}</td>
         }}
       >
-        {content}
+        {normalizedContent}
       </ReactMarkdown>
     </div>
   );
