@@ -88,7 +88,7 @@ export function AiDecisionAnalysis({
   useEffect(() => () => controllerRef.current?.abort(), []);
 
   const title = mode === "teacher"
-    ? "Análisis Generativo del docente con Viernes"
+    ? "Análisis Generativo del docente con Viernes IA"
     : "Análisis asistido con Groq";
   const description = mode === "teacher"
     ? `${groqModelLabel(activeModel)} analiza las 23 preguntas, sus distribuciones y los patrones pedagógicos para crear un informe individual completo. No se envían nombres, correos, identificadores ni comentarios.`
